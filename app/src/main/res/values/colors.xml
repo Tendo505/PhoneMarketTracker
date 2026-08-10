@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="navy">#3949AB</color>
+    <color name="navy_light">#3F51B5</color>
+    <color name="purple">#3949AB</color>
+    <color name="purple_dark">#303F9F</color>
+    <color name="cyan">#00A8B8</color>
+    <color name="screen">#F4F7FB</color>
+    <color name="card">#FFFFFF</color>
+    <color name="text_primary">#111827</color>
+    <color name="text_secondary">#64748B</color>
+    <color name="border">#CBD5E1</color>
+    <color name="profit">#16A34A</color>
+    <color name="loss">#DC2626</color>
+    <color name="warning">#F7B731</color>
+    <color name="white">#FFFFFF</color>
+    <color name="input_fill">#F8FAFC</color>
+    <color name="icon_circle">#E8EAF6</color>
+    <color name="quantity_fill">#F1F5F9</color>
+    <color name="apple_tile">#E8EAF6</color>
+    <color name="apple_phone">#3F51B5</color>
+    <color name="samsung_tile">#E0F7FA</color>
+    <color name="samsung_phone">#00ACC1</color>
+    <color name="xiaomi_tile">#FFF3E0</color>
+    <color name="xiaomi_phone">#FF9800</color>
+</resources>

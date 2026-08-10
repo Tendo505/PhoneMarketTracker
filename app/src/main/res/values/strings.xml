@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PhoneMarketTracker</string>
+    <string name="login_title">Welcome back</string>
+    <string name="login_subtitle">Sign in to manage today’s phone sales</string>
+    <string name="username">Username</string>
+    <string name="password">Password</string>
+    <string name="sign_in">SIGN IN</string>
+</resources>
