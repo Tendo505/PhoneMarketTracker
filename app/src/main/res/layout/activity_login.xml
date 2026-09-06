@@ -98,7 +98,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
                     android:includeFontPadding="false"
-                    android:text="Sign in to manage today’s phone sales"
+                    android:text="Sign in to continue to your inventory"
                     android:textColor="@color/text_secondary"
                     android:textSize="13sp" />
 
@@ -108,21 +108,22 @@
                     android:layout_marginTop="28dp"
                     android:fontFamily="sans-serif-medium"
                     android:includeFontPadding="false"
-                    android:text="USERNAME"
+                    android:text="EMAIL ADDRESS"
                     android:textColor="#475569"
                     android:textSize="11sp"
                     android:textStyle="bold" />
 
                 <EditText
-                    android:id="@+id/editUsername"
+                    android:id="@+id/editEmail"
                     android:layout_width="match_parent"
                     android:layout_height="56dp"
                     android:layout_marginTop="9dp"
                     android:background="@drawable/figma_input"
-                    android:drawableStart="@drawable/figma_user_icon"
+                    android:drawableStart="@drawable/figma_email_icon"
+                    android:drawableEnd="@null"
                     android:drawablePadding="13dp"
-                    android:hint="Enter username"
-                    android:inputType="text"
+                    android:hint="name@example.com"
+                    android:inputType="textEmailAddress"
                     android:maxLines="1"
                     android:paddingStart="16dp"
                     android:paddingEnd="16dp"
@@ -148,6 +149,7 @@
                     android:layout_marginTop="9dp"
                     android:background="@drawable/figma_input"
                     android:drawableStart="@drawable/figma_lock_icon"
+                    android:drawableEnd="@drawable/figma_eye_icon"
                     android:drawablePadding="13dp"
                     android:hint="Enter password"
                     android:imeOptions="actionDone"
@@ -178,7 +180,7 @@
                     android:layout_marginTop="20dp"
                     android:gravity="center"
                     android:includeFontPadding="false"
-                    android:text="New to PhoneMarketTracker?"
+                    android:text="New to the app?"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
 
@@ -205,7 +207,7 @@
                     android:layout_marginTop="14dp"
                     android:gravity="center"
                     android:includeFontPadding="false"
-                    android:text="Your sales data stays on this device."
+                    android:text="Front-end interface preview"
                     android:textColor="#7C8AA0"
                     android:textSize="11sp" />
             </LinearLayout>

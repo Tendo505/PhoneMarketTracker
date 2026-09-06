@@ -8,72 +8,99 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
+/** Front-end sign-in screen. No account data is stored or authenticated. */
 public class LoginActivity extends Activity {
 
-    private EditText editUsername;
-    private EditText editPassword;
-    private DatabaseSQL databaseSQL;
+    private static final String EXTRA_PREVIEW_EMAIL = "preview_email";
 
+    private EditText emailInput;
+    private EditText passwordInput;
+
+    // create
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        databaseSQL = new DatabaseSQL(this);
-        editUsername = findViewById(R.id.editUsername);
-        editPassword = findViewById(R.id.editPassword);
-        Button buttonLogin = findViewById(R.id.buttonLogin);
-        TextView textSignUp = findViewById(R.id.textSignUp);
+        connectViews();
+        displayPreviewEmail();
+        setUpActions();
+    }
 
-        String registeredUsername = getIntent().getStringExtra("registered_username");
-        if (registeredUsername != null) {
-            editUsername.setText(registeredUsername);
-            editPassword.requestFocus();
+    // read
+    private void connectViews() {
+        emailInput = findViewById(R.id.editEmail);
+        passwordInput = findViewById(R.id.editPassword);
+    }
+
+    // display output
+    private void displayPreviewEmail() {
+        String previewEmailAddress = getIntent().getStringExtra(EXTRA_PREVIEW_EMAIL);
+
+        if (previewEmailAddress != null) {
+            emailInput.setText(previewEmailAddress);
+            passwordInput.requestFocus();
         }
+    }
 
-        buttonLogin.setOnClickListener(view -> attemptLogin());
-        textSignUp.setOnClickListener(view ->
-                startActivity(new Intent(this, SignUpActivity.class)));
-        editPassword.setOnEditorActionListener((view, actionId, event) -> {
+    private void setUpActions() {
+        Button signInButton = findViewById(R.id.buttonLogin);
+        TextView signUpLink = findViewById(R.id.textSignUp);
+
+        signInButton.setOnClickListener(view -> validateInputAndOpenProductMenu());
+        signUpLink.setOnClickListener(view -> openSignUpScreen());
+        passwordInput.setOnEditorActionListener((view, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_DONE) {
-                attemptLogin();
+                validateInputAndOpenProductMenu();
                 return true;
             }
+
             return false;
         });
     }
 
-    private void attemptLogin() {
-        String username = editUsername.getText().toString().trim();
-        String password = editPassword.getText().toString();
+    // validate input
+    private void validateInputAndOpenProductMenu() {
+        String emailAddress = readEmailAddress();
+        String password = readPassword();
 
-        if (TextUtils.isEmpty(username)) {
-            editUsername.setError("Enter your username");
-            editUsername.requestFocus();
+        if (TextUtils.isEmpty(emailAddress)) {
+            displayInputError(emailInput, "Enter your email address");
             return;
         }
+
         if (TextUtils.isEmpty(password)) {
-            editPassword.setError("Enter your password");
-            editPassword.requestFocus();
+            displayInputError(passwordInput, "Enter your password");
             return;
         }
 
-        if (databaseSQL.authenticate(username, password)) {
-            Toast.makeText(this, "Login successful", Toast.LENGTH_SHORT).show();
-            startActivity(new Intent(this, CartActivity.class));
-            finish();
-        } else {
-            editPassword.setText("");
-            editPassword.setError("Incorrect username or password");
-            editPassword.requestFocus();
-        }
+        openProductMenu();
     }
 
-    @Override
-    protected void onDestroy() {
-        databaseSQL.close();
-        super.onDestroy();
+    // read
+    private String readEmailAddress() {
+        return emailInput.getText().toString().trim();
+    }
+
+    // read
+    private String readPassword() {
+        return passwordInput.getText().toString();
+    }
+
+    // display output
+    private void displayInputError(EditText inputField, String errorMessage) {
+        inputField.setError(errorMessage);
+        inputField.requestFocus();
+    }
+
+    private void openSignUpScreen() {
+        Intent signUpIntent = new Intent(this, SignUpActivity.class);
+        startActivity(signUpIntent);
+    }
+
+    private void openProductMenu() {
+        Intent productMenuIntent = new Intent(this, ProductActivity.class);
+        startActivity(productMenuIntent);
     }
 }

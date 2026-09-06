@@ -9,6 +9,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PhoneMarketTracker">
 
+        <activity android:name=".ChartActivity" />
+        <activity android:name=".ProductActivity" />
         <activity android:name=".CartActivity" />
         <activity android:name=".SignUpActivity" />
         <activity

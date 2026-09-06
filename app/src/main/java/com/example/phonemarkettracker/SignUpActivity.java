@@ -4,88 +4,118 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Patterns;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
+/** Front-end sign-up preview. The entered details are not persisted. */
 public class SignUpActivity extends Activity {
 
-    private DatabaseSQL databaseSQL;
-    private EditText editUsername;
-    private EditText editPassword;
-    private EditText editConfirmPassword;
+    private static final String EXTRA_PREVIEW_EMAIL = "preview_email";
+    private static final int MINIMUM_PASSWORD_LENGTH = 6;
 
+    private EditText fullNameInput;
+    private EditText emailInput;
+    private EditText passwordInput;
+    private EditText confirmPasswordInput;
+
+    // create
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sign_up);
 
-        databaseSQL = new DatabaseSQL(this);
-        editUsername = findViewById(R.id.editSignUpUsername);
-        editPassword = findViewById(R.id.editSignUpPassword);
-        editConfirmPassword = findViewById(R.id.editConfirmPassword);
-        Button buttonCreateAccount = findViewById(R.id.buttonCreateAccount);
-        TextView textBackToSignIn = findViewById(R.id.textBackToSignIn);
+        connectViews();
+        setUpActions();
+    }
 
-        buttonCreateAccount.setOnClickListener(view -> createAccount());
-        textBackToSignIn.setOnClickListener(view -> finish());
-        editConfirmPassword.setOnEditorActionListener((view, actionId, event) -> {
+    // read
+    private void connectViews() {
+        fullNameInput = findViewById(R.id.editSignUpName);
+        emailInput = findViewById(R.id.editSignUpEmail);
+        passwordInput = findViewById(R.id.editSignUpPassword);
+        confirmPasswordInput = findViewById(R.id.editConfirmPassword);
+    }
+
+    private void setUpActions() {
+        Button createAccountButton = findViewById(R.id.buttonCreateAccount);
+        TextView signInLink = findViewById(R.id.textBackToSignIn);
+
+        createAccountButton.setOnClickListener(view -> validateInputAndReturnToSignIn());
+        signInLink.setOnClickListener(view -> finish());
+        confirmPasswordInput.setOnEditorActionListener((view, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_DONE) {
-                createAccount();
+                validateInputAndReturnToSignIn();
                 return true;
             }
+
             return false;
         });
     }
 
-    private void createAccount() {
-        String username = editUsername.getText().toString().trim();
-        String password = editPassword.getText().toString();
-        String confirmation = editConfirmPassword.getText().toString();
+    // validate input
+    private void validateInputAndReturnToSignIn() {
+        String fullName = readFullName();
+        String emailAddress = readEmailAddress();
+        String password = readPassword();
+        String confirmedPassword = readConfirmedPassword();
 
-        if (TextUtils.isEmpty(username)) {
-            editUsername.setError("Enter a username");
-            editUsername.requestFocus();
-            return;
-        }
-        if (!username.matches("[A-Za-z0-9_]{3,20}")) {
-            editUsername.setError("Use 3–20 letters, numbers, or underscores");
-            editUsername.requestFocus();
-            return;
-        }
-        if (password.length() < 6) {
-            editPassword.setError("Password must contain at least 6 characters");
-            editPassword.requestFocus();
-            return;
-        }
-        if (!password.equals(confirmation)) {
-            editConfirmPassword.setError("Passwords do not match");
-            editConfirmPassword.requestFocus();
-            return;
-        }
-        if (databaseSQL.usernameExists(username)) {
-            editUsername.setError("This username is already registered");
-            editUsername.requestFocus();
-            return;
-        }
-        if (!databaseSQL.registerUser(username, password)) {
-            Toast.makeText(this, "Account could not be created", Toast.LENGTH_SHORT).show();
+        if (TextUtils.isEmpty(fullName)) {
+            displayInputError(fullNameInput, "Enter your full name");
             return;
         }
 
-        Toast.makeText(this, "Account created. You can sign in now.", Toast.LENGTH_LONG).show();
-        Intent intent = new Intent(this, LoginActivity.class);
-        intent.putExtra("registered_username", username);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        startActivity(intent);
-        finish();
+        if (!Patterns.EMAIL_ADDRESS.matcher(emailAddress).matches()) {
+            displayInputError(emailInput, "Enter a valid email address");
+            return;
+        }
+
+        if (password.length() < MINIMUM_PASSWORD_LENGTH) {
+            displayInputError(passwordInput, "Use at least 6 characters");
+            return;
+        }
+
+        if (!password.equals(confirmedPassword)) {
+            displayInputError(confirmPasswordInput, "Passwords do not match");
+            return;
+        }
+
+        openSignInScreen(emailAddress);
     }
 
-    @Override
-    protected void onDestroy() {
-        databaseSQL.close();
-        super.onDestroy();
+    // read
+    private String readFullName() {
+        return fullNameInput.getText().toString().trim();
+    }
+
+    // read
+    private String readEmailAddress() {
+        return emailInput.getText().toString().trim();
+    }
+
+    // read
+    private String readPassword() {
+        return passwordInput.getText().toString();
+    }
+
+    // read
+    private String readConfirmedPassword() {
+        return confirmPasswordInput.getText().toString();
+    }
+
+    // display output
+    private void displayInputError(EditText inputField, String errorMessage) {
+        inputField.setError(errorMessage);
+        inputField.requestFocus();
+    }
+
+    private void openSignInScreen(String emailAddress) {
+        Intent signInIntent = new Intent(this, LoginActivity.class);
+        signInIntent.putExtra(EXTRA_PREVIEW_EMAIL, emailAddress);
+        signInIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        startActivity(signInIntent);
+        finish();
     }
 }
