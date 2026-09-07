@@ -8,20 +8,25 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
-/** Front-end sign-in screen. No account data is stored or authenticated. */
+/** Signs in an existing user stored in the local SQLite database. */
 public class LoginActivity extends Activity {
 
     private static final String EXTRA_PREVIEW_EMAIL = "preview_email";
 
     private EditText emailInput;
     private EditText passwordInput;
+    private DatabasePMT databasePMT;
 
     // create
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+
+        databasePMT = new DatabasePMT(this);
+        databasePMT.getWritableDatabase();
 
         connectViews();
         displayPreviewEmail();
@@ -72,6 +77,20 @@ public class LoginActivity extends Activity {
 
         if (TextUtils.isEmpty(password)) {
             displayInputError(passwordInput, "Enter your password");
+            return;
+        }
+
+        boolean userValid = databasePMT.checkUser(
+                emailAddress,
+                password
+        );
+
+        if (!userValid) {
+            Toast.makeText(
+                    this,
+                    "Invalid email or password",
+                    Toast.LENGTH_SHORT
+            ).show();
             return;
         }
 

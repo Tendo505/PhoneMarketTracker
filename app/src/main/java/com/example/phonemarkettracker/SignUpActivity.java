@@ -9,8 +9,9 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
-/** Front-end sign-up preview. The entered details are not persisted. */
+/** Creates a user account in the local SQLite database. */
 public class SignUpActivity extends Activity {
 
     private static final String EXTRA_PREVIEW_EMAIL = "preview_email";
@@ -20,12 +21,16 @@ public class SignUpActivity extends Activity {
     private EditText emailInput;
     private EditText passwordInput;
     private EditText confirmPasswordInput;
+    private DatabasePMT databasePMT;
 
     // create
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sign_up);
+
+        databasePMT = new DatabasePMT(this);
+        databasePMT.getWritableDatabase();
 
         connectViews();
         setUpActions();
@@ -81,6 +86,32 @@ public class SignUpActivity extends Activity {
             displayInputError(confirmPasswordInput, "Passwords do not match");
             return;
         }
+
+        if (databasePMT.emailExists(emailAddress)) {
+            displayInputError(emailInput, "Email already registered");
+            return;
+        }
+
+        boolean accountCreated = databasePMT.addUser(
+                fullName,
+                emailAddress,
+                password
+        );
+
+        if (!accountCreated) {
+            Toast.makeText(
+                    this,
+                    "Unable to create account",
+                    Toast.LENGTH_SHORT
+            ).show();
+            return;
+        }
+
+        Toast.makeText(
+                this,
+                "Account created successfully",
+                Toast.LENGTH_SHORT
+        ).show();
 
         openSignInScreen(emailAddress);
     }
