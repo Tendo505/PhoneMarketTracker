@@ -80,12 +80,12 @@ public class LoginActivity extends Activity {
             return;
         }
 
-        boolean userValid = databasePMT.checkUser(
+        int userId = databasePMT.getUserId(
                 emailAddress,
                 password
         );
 
-        if (!userValid) {
+        if (userId == -1) {
             Toast.makeText(
                     this,
                     "Invalid email or password",
@@ -94,6 +94,7 @@ public class LoginActivity extends Activity {
             return;
         }
 
+        UserSession.signIn(userId);
         openProductMenu();
     }
 
