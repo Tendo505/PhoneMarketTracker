@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -96,18 +97,25 @@ public class ProductActivity extends Activity {
     }
 
     // create
-    private TextView createPhoneTile(Phone phone) {
-        TextView phoneTile = new TextView(this);
-        phoneTile.setGravity(Gravity.CENTER);
-        phoneTile.setText(phone.getBrand().substring(0, 1).toUpperCase(Locale.ROOT));
-        phoneTile.setTextColor(getColor(getBrandColor(phone.getBrand())));
-        phoneTile.setTextSize(26);
-        phoneTile.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+    private FrameLayout createPhoneTile(Phone phone) {
+        FrameLayout phoneTile = new FrameLayout(this);
         phoneTile.setBackground(createRoundedBackground(
                 getBrandTileColor(phone.getBrand()),
                 14
         ));
         phoneTile.setLayoutParams(new LinearLayout.LayoutParams(dp(62), dp(82)));
+
+        View phoneBody = new View(this);
+        phoneBody.setBackground(createRoundedBackground(
+                getBrandColor(phone.getBrand()),
+                5
+        ));
+        phoneTile.addView(phoneBody, new FrameLayout.LayoutParams(
+                dp(28),
+                dp(58),
+                Gravity.CENTER
+        ));
+        phoneTile.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
         return phoneTile;
     }
 
