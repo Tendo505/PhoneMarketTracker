@@ -18,11 +18,14 @@ public class DatabasePMT extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "phonemarkettracker.db";
     private static final int DATABASE_VERSION = 5;
 
-    private static final String DEFAULT_FULL_NAME =
-            "Muhammad Amirul Harith Bin Zakaria";
-    private static final String DEFAULT_EMAIL =
-            "amirulharith505@gmail.com";
-    private static final String DEFAULT_PASSWORD = "abcd1234";
+    private static final String[][] DEFAULT_PHONE_DETAILS = {
+            {"Apple", "iPhone 13 128GB", "1800.00", "2199.00", "8"},
+            {"Apple", "iPhone 15 128GB", "2850.00", "3299.00", "5"},
+            {"Samsung", "Galaxy S24 256GB", "2600.00", "3099.00", "6"},
+            {"Xiaomi", "Redmi Note 13", "650.00", "799.00", "10"},
+            {"OPPO", "Reno 11F 5G", "1050.00", "1299.00", "7"},
+            {"OPPO", "Reno 12", "1500.00", "1899.00", "8"}
+    };
 
     private static final String TABLE_USERS = "users";
     private static final String COLUMN_USER_ID = "user_id";
@@ -67,7 +70,6 @@ public class DatabasePMT extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase database) {
         createUsersTable(database);
-        insertDefaultUser(database);
         createPhonesTable(database);
         insertCurrentPhoneDetails(database);
         createSalesTables(database);
@@ -89,7 +91,6 @@ public class DatabasePMT extends SQLiteOpenHelper {
             database.execSQL("DROP TABLE IF EXISTS users_backup");
             database.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS);
             createUsersTable(database);
-            insertDefaultUser(database);
         }
 
         if (oldVersion < 5) {
@@ -158,23 +159,17 @@ public class DatabasePMT extends SQLiteOpenHelper {
     }
 
     // create
-    private void insertDefaultUser(SQLiteDatabase database) {
-        ContentValues userDetails = new ContentValues();
-        userDetails.put(COLUMN_FULL_NAME, DEFAULT_FULL_NAME);
-        userDetails.put(COLUMN_EMAIL, DEFAULT_EMAIL);
-        userDetails.put(COLUMN_PASSWORD, DEFAULT_PASSWORD);
-
-        database.insert(TABLE_USERS, null, userDetails);
-    }
-
-    // create
     private void insertCurrentPhoneDetails(SQLiteDatabase database) {
-        addPhoneIfMissing(database, "Apple", "iPhone 13 128GB", 1800.00, 2199.00, 8);
-        addPhoneIfMissing(database, "Apple", "iPhone 15 128GB", 2850.00, 3299.00, 5);
-        addPhoneIfMissing(database, "Samsung", "Galaxy S24 256GB", 2600.00, 3099.00, 6);
-        addPhoneIfMissing(database, "Xiaomi", "Redmi Note 13", 650.00, 799.00, 10);
-        addPhoneIfMissing(database, "OPPO", "Reno 11F 5G", 1050.00, 1299.00, 7);
-        addPhoneIfMissing(database, "OPPO", "Reno 12", 1500.00, 1899.00, 8);
+        for (String[] phoneDetails : DEFAULT_PHONE_DETAILS) {
+            addPhoneIfMissing(
+                    database,
+                    phoneDetails[0],
+                    phoneDetails[1],
+                    Double.parseDouble(phoneDetails[2]),
+                    Double.parseDouble(phoneDetails[3]),
+                    Integer.parseInt(phoneDetails[4])
+            );
+        }
     }
 
     // create

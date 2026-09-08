@@ -1,36 +1,44 @@
-# PhoneMarketTracker Android Front End
+# PhoneMarketTracker V2
 
-PhoneMarketTracker is a simple Android Studio Koala interface built with pure
-Java and editable XML layouts. This version intentionally contains no database,
-authentication backend, stock updates, checkout logic, or persistent storage.
+PhoneMarketTracker is a simple Android Studio Koala application for a small
+phone-shop owner. It uses pure Java, editable Android XML layouts, one local
+SQLite database, and MPAndroidChart 3.1.0.
 
-## Included screens
+## Completed screens
 
-- Sign In
-- Sign Up
-- Product Menu with static preview cards
-- Sales Overview using MPAndroidChart
-- Blank Cart screen reserved for later development
+- Sign In and Sign Up with SQLite authentication
+- Product Menu loaded from the `phones` table
+- Sales Cart with quantity controls and calculated totals
+- Sales Overview with a live most-sold bar chart
 
-The buttons provide navigation and basic form validation so the complete UI can
-be demonstrated in an emulator without a backend.
+## V2 sales workflow
 
-## Chart library
+1. Sign in or create a local account.
+2. Add available phones from Product Menu.
+3. Adjust quantities in Sales Cart.
+4. Review original cost, selling total, and profit or loss.
+5. Complete the sale to store it and reduce phone stock.
+6. Open Sales Overview to view today's totals and most-sold phone.
+7. Choose **Close Day** to clear today's tracking and the temporary cart.
 
-The Sales Overview uses MPAndroidChart `v3.1.0`:
+Closing the day does not delete users, phone details, prices, or current stock.
+The cart is held in memory and also resets when the application process closes.
 
-```gradle
-implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
+## SQLite tables
+
+- `users`: local authentication accounts
+- `phones`: brand, model, cost price, selling price, and stock quantity
+- `sales`: user, date, total cost, revenue, and profit or loss
+- `sale_items`: phones and quantities included in each completed sale
+
+The six starting phone records are represented in a multidimensional Java array
+before they are inserted into SQLite.
+
+## Build and test
+
+```powershell
+.\gradlew.bat testDebugUnitTest assembleDebug lintDebug
 ```
 
-JitPack is already included in `settings.gradle`.
-
-## Open and run
-
-1. Open Android Studio Koala.
-2. Select **Open** and choose the `PhoneMarketTracker` folder.
-3. Wait for Gradle sync to complete.
-4. Choose an emulator and press **Run**.
-
-On Sign In, enter any non-empty email and password to open the Product Menu.
-This is only front-end behaviour; the values are not authenticated or saved.
+Open the project folder in Android Studio Koala, allow Gradle to sync, choose an
+Android emulator, and run the `app` configuration.
