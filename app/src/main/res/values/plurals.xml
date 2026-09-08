@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="phone_count">
+        <item quantity="one">%d phone</item>
+        <item quantity="other">%d phones</item>
+    </plurals>
+    <plurals name="cart_item_count">
+        <item quantity="one">%d phone selected</item>
+        <item quantity="other">%d phones selected</item>
+    </plurals>
+</resources>
