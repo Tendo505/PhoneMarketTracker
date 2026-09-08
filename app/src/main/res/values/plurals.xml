@@ -8,4 +8,8 @@
         <item quantity="one">%d phone selected</item>
         <item quantity="other">%d phones selected</item>
     </plurals>
+    <plurals name="phone_sold_count">
+        <item quantity="one">%d phone</item>
+        <item quantity="other">%d phones</item>
+    </plurals>
 </resources>

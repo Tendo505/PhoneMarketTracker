@@ -10,22 +10,43 @@
         android:layout_height="76dp"
         android:background="@color/navy_light"
         android:gravity="center_vertical"
-        android:orientation="vertical"
+        android:orientation="horizontal"
         android:paddingStart="22dp"
         android:paddingEnd="22dp">
-        <TextView
-            android:layout_width="wrap_content"
+
+        <LinearLayout
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Sales Overview"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Sales Overview"
+                android:textColor="@color/white"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Today • Live SQLite data"
+                android:textColor="#DDE3FF"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/buttonCloseDay"
+            android:layout_width="wrap_content"
+            android:layout_height="44dp"
+            android:gravity="center"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:text="CLOSE DAY"
             android:textColor="@color/white"
-            android:textSize="22sp"
+            android:textSize="10sp"
             android:textStyle="bold" />
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Today • Interface preview"
-            android:textColor="#DDE3FF"
-            android:textSize="11sp" />
     </LinearLayout>
 
     <ScrollView
@@ -65,10 +86,11 @@
                         android:textSize="10sp"
                         android:textStyle="bold" />
                     <TextView
+                        android:id="@+id/textTotalSold"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="21 phones"
+                        android:text="0 phones"
                         android:textColor="@color/text_primary"
                         android:textSize="22sp"
                         android:textStyle="bold" />
@@ -86,15 +108,16 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="EST. PROFIT"
+                        android:text="PROFIT / LOSS"
                         android:textColor="@color/text_secondary"
                         android:textSize="10sp"
                         android:textStyle="bold" />
                     <TextView
+                        android:id="@+id/textDailyProfitLoss"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="RM 1,420"
+                        android:text="+RM 0.00"
                         android:textColor="@color/profit"
                         android:textSize="22sp"
                         android:textStyle="bold" />
@@ -123,7 +146,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="3dp"
-                    android:text="Display-only sample data"
+                    android:text="Completed sales stored for today"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
                 <com.github.mikephil.charting.charts.BarChart
@@ -166,18 +189,20 @@
                         android:textSize="10sp"
                         android:textStyle="bold" />
                     <TextView
+                        android:id="@+id/textTopPhone"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="3dp"
-                        android:text="Apple iPhone 15"
+                        android:text="No sales yet"
                         android:textColor="@color/text_primary"
                         android:textSize="16sp"
                         android:textStyle="bold" />
                 </LinearLayout>
                 <TextView
+                    android:id="@+id/textTopQuantity"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="8 sold"
+                    android:text="0 sold"
                     android:textColor="@color/navy_light"
                     android:textSize="15sp"
                     android:textStyle="bold" />
