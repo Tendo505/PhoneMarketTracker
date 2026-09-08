@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Keeps the current cart in memory until checkout, sign out, or app closure. */
-public final class CartManager {
+public class CartManager {
 
     private static final List<CartItem> CART_ITEMS = new ArrayList<>();
 

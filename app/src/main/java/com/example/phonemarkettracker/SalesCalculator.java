@@ -3,7 +3,7 @@ package com.example.phonemarkettracker;
 import java.util.List;
 
 /** Calculates cart totals without depending on Android UI classes. */
-public final class SalesCalculator {
+public class SalesCalculator {
 
     private SalesCalculator() {
     }
