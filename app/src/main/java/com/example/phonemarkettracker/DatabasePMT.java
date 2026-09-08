@@ -14,12 +14,6 @@ public class DatabasePMT extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "phonemarkettracker.db";
     private static final int DATABASE_VERSION = 4;
 
-    private static final String DEFAULT_FULL_NAME =
-            "Muhammad Amirul Harith Bin Zakaria";
-    private static final String DEFAULT_EMAIL =
-            "amirulharith505@gmail.com";
-    private static final String DEFAULT_PASSWORD = "abcd1234";
-
     private static final String TABLE_USERS = "users";
     private static final String COLUMN_USER_ID = "user_id";
     private static final String COLUMN_FULL_NAME = "full_name";
@@ -43,7 +37,6 @@ public class DatabasePMT extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase database) {
         createUsersTable(database);
-        insertDefaultUser(database);
         createPhonesTable(database);
         insertCurrentPhoneDetails(database);
     }
@@ -72,23 +65,12 @@ public class DatabasePMT extends SQLiteOpenHelper {
             database.execSQL("DROP TABLE IF EXISTS users_backup");
             database.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS);
             createUsersTable(database);
-            insertDefaultUser(database);
         }
 
         if (oldVersion < 3) {
             createPhonesTable(database);
             insertCurrentPhoneDetails(database);
         }
-    }
-
-    // create
-    private void insertDefaultUser(SQLiteDatabase database) {
-        ContentValues userDetails = new ContentValues();
-        userDetails.put(COLUMN_FULL_NAME, DEFAULT_FULL_NAME);
-        userDetails.put(COLUMN_EMAIL, DEFAULT_EMAIL);
-        userDetails.put(COLUMN_PASSWORD, DEFAULT_PASSWORD);
-
-        database.insert(TABLE_USERS, null, userDetails);
     }
 
     // create
