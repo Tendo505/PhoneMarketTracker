@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".MainActivity"
+        android:orientation="vertical"
+        android:background="#ffff00">
+        <TextView Phones>
+            android:text="phones"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:autoSizeTextType="uniform" >
+        </TextView>
+    </LinearLayout>>
+
+    <TableLayout>
+        <TextView
+            android:id="@+id/idPhone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:layout_margin="20dp"
+            android:gravity="center"
+            android:padding="10dp"
+            android:textAlignment="center"
+            android:textColor="@color/black"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id= "@+id/InputAmount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:layout_marginLeft="80dp"
+            android:text="Type the amount bought"
+            android:textSize="20dp"
+            android:textStyle="bold" />
+
+        <ButtonADD
+            android:id= "@+id/AddAmount"
+            android:layout_width="180dp"
+            android:layout_height="60dp"
+            android:layout_marginLeft="180dp"
+            android:layout_marginTop="20dp"
+            android:text="Add"
+            android:textColor="#FFFF"/>
+
+        <TextView2
+            android:id="@+id/idPhone2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:layout_margin="20dp"
+            android:gravity="center"
+            android:padding="10dp"
+            android:textAlignment="center"
+            android:textColor="@color/black"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <EditText2
+            android:id= "@+id/InputAmount2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:layout_marginLeft="80dp"
+            android:text="Write the color name !"
+            android:textSize="20dp"
+            android:textStyle="bold" />
+
+        <ButtonADD2
+            android:id= "@+id/AddAmount2"
+            android:layout_width="180dp"
+            android:layout_height="60dp"
+            android:layout_marginLeft="180dp"
+            android:layout_marginTop="20dp"
+            android:text="Add"
+            android:textColor="#FFFF"/>
+
+        <TextView3
+            android:id="@+id/idPhone3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:layout_margin="20dp"
+            android:gravity="center"
+            android:padding="10dp"
+            android:textAlignment="center"
+            android:textColor="@color/black"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <EditText3
+            android:id= "@+id/InputAmount3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:layout_marginLeft="80dp"
+            android:text="Write the color name !"
+            android:textSize="20dp"
+            android:textStyle="bold" />
+
+        <ButtonADD3
+            android:id= "@+id/AddAmount3"
+            android:layout_width="180dp"
+            android:layout_height="60dp"
+            android:layout_marginLeft="180dp"
+            android:layout_marginTop="20dp"
+            android:text="rectangle"
+            android:textColor="#FFFF"/>
+
+        <ButtonAccessory
+            android:id= "@+id/ToAccessory"
+            android:layout_width="180dp"
+            android:layout_height="60dp"
+            android:layout_marginLeft="180dp"
+            android:layout_marginTop="20dp"
+            android:text="Phone's accessory"
+            android:textColor="#FFFF"/>
+
+        <ButtonCart
+            android:id= "@+id/ToCart"
+            android:layout_width="180dp"
+            android:layout_height="60dp"
+            android:layout_marginLeft="180dp"
+            android:layout_marginTop="20dp"
+            android:text="Cart"
+            android:textColor="#FFFF"/>
+    </TableLayout>
+</selector>
