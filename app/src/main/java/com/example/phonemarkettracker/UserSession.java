@@ -1,6 +1,6 @@
 package com.example.phonemarkettracker;
 
-/** Keeps the signed-in user's ID for sales created during this app session. */
+//keeps the signed-in user's id for sales created during this app session.
 public class UserSession {
 
     private static int userId = -1;
@@ -8,17 +8,17 @@ public class UserSession {
     private UserSession() {
     }
 
-    // create
+    //create
     public static void signIn(int signedInUserId) {
         userId = signedInUserId;
     }
 
-    // read
+    //read
     public static int getUserId() {
         return userId;
     }
 
-    // delete
+    //delete
     public static void signOut() {
         userId = -1;
     }

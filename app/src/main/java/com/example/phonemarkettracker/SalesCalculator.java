@@ -2,13 +2,14 @@ package com.example.phonemarkettracker;
 
 import java.util.List;
 
-/** Calculates cart totals without depending on Android UI classes. */
+//calculates cart totals without depending on android ui classes.
 public class SalesCalculator {
 
+    //1.utility class setup
     private SalesCalculator() {
     }
 
-    // calculate result
+    //2.calculate whole-cart totals
     public static double calculateTotalCost(List<CartItem> cartItems) {
         double totalCost = 0.0;
 
@@ -19,7 +20,6 @@ public class SalesCalculator {
         return totalCost;
     }
 
-    // calculate result
     public static double calculateTotalRevenue(List<CartItem> cartItems) {
         double totalRevenue = 0.0;
 
@@ -30,7 +30,6 @@ public class SalesCalculator {
         return totalRevenue;
     }
 
-    // calculate result
     public static double calculateProfitLoss(List<CartItem> cartItems) {
         return calculateTotalRevenue(cartItems) - calculateTotalCost(cartItems);
     }

@@ -15,7 +15,7 @@ import android.widget.Toast;
 import java.util.List;
 import java.util.Locale;
 
-/** Displays the current cart, calculates totals, and saves completed sales. */
+//displays the current cart, calculates totals, and saves completed sales.
 public class CartActivity extends Activity {
 
     private DatabasePMT databasePMT;
@@ -28,7 +28,7 @@ public class CartActivity extends Activity {
     private TextView profitLossText;
     private Button completeSaleButton;
 
-    // create
+    //1.screen setup
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -39,14 +39,12 @@ public class CartActivity extends Activity {
         setUpActions();
     }
 
-    // display output
     @Override
     protected void onResume() {
         super.onResume();
         displayCart();
     }
 
-    // read
     private void connectViews() {
         cartItemContainer = findViewById(R.id.cartItemContainer);
         cartSummaryCard = findViewById(R.id.cartSummaryCard);
@@ -65,7 +63,7 @@ public class CartActivity extends Activity {
         findViewById(R.id.navProducts).setOnClickListener(view -> openProductMenu());
     }
 
-    // display output
+    //2.read cart and display totals
     private void displayCart() {
         List<CartItem> cartItems = CartManager.getItems();
         boolean cartEmpty = cartItems.isEmpty();
@@ -89,7 +87,66 @@ public class CartActivity extends Activity {
         displayCalculatedTotals(cartItems);
     }
 
-    // create
+    private void displayCalculatedTotals(List<CartItem> cartItems) {
+        double totalCost = SalesCalculator.calculateTotalCost(cartItems);
+        double totalRevenue = SalesCalculator.calculateTotalRevenue(cartItems);
+        double profitLoss = SalesCalculator.calculateProfitLoss(cartItems);
+
+        totalCostText.setText(formatMoney(totalCost));
+        totalRevenueText.setText(formatMoney(totalRevenue));
+        profitLossText.setText(formatSignedMoney(profitLoss));
+        profitLossText.setTextColor(getColor(
+                profitLoss >= 0 ? R.color.profit : R.color.loss
+        ));
+    }
+
+    //3.process: confirm, save or clear
+    private void confirmSale() {
+        List<CartItem> cartItems = CartManager.getItems();
+
+        if (cartItems.isEmpty()) {
+            return;
+        }
+
+        String message =
+                "Revenue: " + formatMoney(SalesCalculator.calculateTotalRevenue(cartItems)) +
+                        "\nProfit / Loss: " +
+                        formatSignedMoney(SalesCalculator.calculateProfitLoss(cartItems));
+
+        new AlertDialog.Builder(this)
+                .setTitle("Complete sale?")
+                .setMessage(message)
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Complete", (dialog, which) -> saveSale(cartItems))
+                .show();
+    }
+
+    private void saveSale(List<CartItem> cartItems) {
+        boolean saleCompleted = databasePMT.completeSale(
+                UserSession.getUserId(),
+                cartItems
+        );
+
+        if (!saleCompleted) {
+            Toast.makeText(
+                    this,
+                    "Sale could not be completed. Check the available stock.",
+                    Toast.LENGTH_LONG
+            ).show();
+            return;
+        }
+
+        CartManager.clear();
+        displayCart();
+        Toast.makeText(this, "Sale completed and saved", Toast.LENGTH_SHORT).show();
+    }
+
+    private void clearCart() {
+        CartManager.clear();
+        displayCart();
+    }
+
+    //4.output and quantity controls
     private View createCartItemCard(CartItem cartItem) {
         LinearLayout itemCard = new LinearLayout(this);
         itemCard.setOrientation(LinearLayout.VERTICAL);
@@ -124,7 +181,6 @@ public class CartActivity extends Activity {
         return itemCard;
     }
 
-    // create
     private LinearLayout createQuantityRow(CartItem cartItem) {
         LinearLayout quantityRow = new LinearLayout(this);
         quantityRow.setGravity(Gravity.CENTER_VERTICAL);
@@ -186,7 +242,6 @@ public class CartActivity extends Activity {
         return quantityRow;
     }
 
-    // create
     private TextView createQuantityButton(String label) {
         TextView quantityButton = createText(label, 18, R.color.navy_light, true);
         quantityButton.setGravity(Gravity.CENTER);
@@ -195,7 +250,7 @@ public class CartActivity extends Activity {
         return quantityButton;
     }
 
-    // create
+    //5.display helpers
     private TextView createText(
             String text,
             int textSize,
@@ -210,74 +265,10 @@ public class CartActivity extends Activity {
         return textView;
     }
 
-    // calculate result
-    private void displayCalculatedTotals(List<CartItem> cartItems) {
-        double totalCost = SalesCalculator.calculateTotalCost(cartItems);
-        double totalRevenue = SalesCalculator.calculateTotalRevenue(cartItems);
-        double profitLoss = SalesCalculator.calculateProfitLoss(cartItems);
-
-        totalCostText.setText(formatMoney(totalCost));
-        totalRevenueText.setText(formatMoney(totalRevenue));
-        profitLossText.setText(formatSignedMoney(profitLoss));
-        profitLossText.setTextColor(getColor(
-                profitLoss >= 0 ? R.color.profit : R.color.loss
-        ));
-    }
-
-    // create
-    private void confirmSale() {
-        List<CartItem> cartItems = CartManager.getItems();
-
-        if (cartItems.isEmpty()) {
-            return;
-        }
-
-        String message =
-                "Revenue: " + formatMoney(SalesCalculator.calculateTotalRevenue(cartItems)) +
-                        "\nProfit / Loss: " +
-                        formatSignedMoney(SalesCalculator.calculateProfitLoss(cartItems));
-
-        new AlertDialog.Builder(this)
-                .setTitle("Complete sale?")
-                .setMessage(message)
-                .setNegativeButton("Cancel", null)
-                .setPositiveButton("Complete", (dialog, which) -> saveSale(cartItems))
-                .show();
-    }
-
-    // create
-    private void saveSale(List<CartItem> cartItems) {
-        boolean saleCompleted = databasePMT.completeSale(
-                UserSession.getUserId(),
-                cartItems
-        );
-
-        if (!saleCompleted) {
-            Toast.makeText(
-                    this,
-                    "Sale could not be completed. Check the available stock.",
-                    Toast.LENGTH_LONG
-            ).show();
-            return;
-        }
-
-        CartManager.clear();
-        displayCart();
-        Toast.makeText(this, "Sale completed and saved", Toast.LENGTH_SHORT).show();
-    }
-
-    // delete
-    private void clearCart() {
-        CartManager.clear();
-        displayCart();
-    }
-
-    // display output
     private String formatMoney(double amount) {
         return String.format(Locale.US, "RM %,.2f", amount);
     }
 
-    // display output
     private String formatSignedMoney(double amount) {
         String sign = amount >= 0 ? "+" : "−";
         return sign + formatMoney(Math.abs(amount));
@@ -287,6 +278,7 @@ public class CartActivity extends Activity {
         return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
+    //6.navigation
     private void openChartScreen() {
         startActivity(new Intent(this, ChartActivity.class));
     }

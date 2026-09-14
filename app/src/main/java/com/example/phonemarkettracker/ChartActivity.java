@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/** Displays today's persisted sales, profit or loss, and most-sold phones. */
+//displays today's persisted sales, profit or loss, and most-sold phones.
 public class ChartActivity extends Activity {
 
     private static final float BAR_WIDTH = 0.58f;
@@ -33,7 +33,7 @@ public class ChartActivity extends Activity {
     private TextView topPhoneText;
     private TextView topQuantityText;
 
-    // create
+    //1.screen setup
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -44,14 +44,12 @@ public class ChartActivity extends Activity {
         setUpActions();
     }
 
-    // display output
     @Override
     protected void onResume() {
         super.onResume();
         displayDailySales();
     }
 
-    // read
     private void connectViews() {
         phoneSalesChart = findViewById(R.id.phoneSalesChart);
         totalSoldText = findViewById(R.id.textTotalSold);
@@ -66,7 +64,7 @@ public class ChartActivity extends Activity {
         findViewById(R.id.navCart).setOnClickListener(view -> openCartScreen());
     }
 
-    // read
+    //2.read daily results and display chart
     private void displayDailySales() {
         DailySalesSummary dailySalesSummary = databasePMT.getTodaySalesSummary();
         List<PhoneSalesRecord> phoneSalesRecords = databasePMT.getTodayPhoneSales();
@@ -90,7 +88,6 @@ public class ChartActivity extends Activity {
         displayPhoneSalesChart(phoneSalesRecords);
     }
 
-    // create chart data
     private void displayPhoneSalesChart(List<PhoneSalesRecord> phoneSalesRecords) {
         List<BarEntry> phoneSalesEntries = new ArrayList<>();
         List<String> phoneLabels = new ArrayList<>();
@@ -101,6 +98,7 @@ public class ChartActivity extends Activity {
             }
 
             phoneSalesEntries.add(new BarEntry(
+                    //x = indeks bar, y = unit terjual.
                     phoneSalesEntries.size(),
                     phoneSalesRecord.getQuantitySold()
             ));
@@ -133,6 +131,49 @@ public class ChartActivity extends Activity {
         phoneSalesChart.invalidate();
     }
 
+    //3.process: confirm and reset today
+    private void confirmDailyReset() {
+        new AlertDialog.Builder(this)
+                .setTitle("Close today's session?")
+                .setMessage(
+                        "This clears today's sales totals, profit or loss, most-sold ranking, " +
+                                "chart data, and cart. Users, phone details, prices, and stock remain."
+                )
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Close Day", (dialog, which) -> resetDailyTracking())
+                .show();
+    }
+
+    private void resetDailyTracking() {
+        databasePMT.resetTodaySales();
+        CartManager.clear();
+        displayDailySales();
+        Toast.makeText(this, "Today's tracking has been reset", Toast.LENGTH_SHORT).show();
+    }
+
+    //4.output formatting
+    private String createShortPhoneLabel(String phoneName) {
+        String shortLabel = phoneName
+                .replace("Apple ", "")
+                .replace("Samsung ", "")
+                .replace("Xiaomi ", "")
+                .replace("OPPO ", "")
+                .replace(" 128GB", "")
+                .replace(" 256GB", "");
+
+        if (shortLabel.length() > 14) {
+            return shortLabel.substring(0, 14);
+        }
+
+        return shortLabel;
+    }
+
+    private String formatSignedMoney(double amount) {
+        String sign = amount >= 0 ? "+" : "−";
+        return sign + String.format(Locale.US, "RM %,.2f", Math.abs(amount));
+    }
+
+    //5.chart styling only
     private void stylePhoneSalesDataSet(BarDataSet phoneSalesDataSet) {
         phoneSalesDataSet.setColors(
                 Color.parseColor("#3F51B5"),
@@ -180,50 +221,7 @@ public class ChartActivity extends Activity {
         verticalAxis.setGridColor(Color.parseColor("#E6EBF2"));
     }
 
-    // display output
-    private String createShortPhoneLabel(String phoneName) {
-        String shortLabel = phoneName
-                .replace("Apple ", "")
-                .replace("Samsung ", "")
-                .replace("Xiaomi ", "")
-                .replace("OPPO ", "")
-                .replace(" 128GB", "")
-                .replace(" 256GB", "");
-
-        if (shortLabel.length() > 14) {
-            return shortLabel.substring(0, 14);
-        }
-
-        return shortLabel;
-    }
-
-    // delete
-    private void confirmDailyReset() {
-        new AlertDialog.Builder(this)
-                .setTitle("Close today's session?")
-                .setMessage(
-                        "This clears today's sales totals, profit or loss, most-sold ranking, " +
-                                "chart data, and cart. Users, phone details, prices, and stock remain."
-                )
-                .setNegativeButton("Cancel", null)
-                .setPositiveButton("Close Day", (dialog, which) -> resetDailyTracking())
-                .show();
-    }
-
-    // delete
-    private void resetDailyTracking() {
-        databasePMT.resetTodaySales();
-        CartManager.clear();
-        displayDailySales();
-        Toast.makeText(this, "Today's tracking has been reset", Toast.LENGTH_SHORT).show();
-    }
-
-    // display output
-    private String formatSignedMoney(double amount) {
-        String sign = amount >= 0 ? "+" : "−";
-        return sign + String.format(Locale.US, "RM %,.2f", Math.abs(amount));
-    }
-
+    //6.navigation
     private void openProductMenu() {
         startActivity(new Intent(this, ProductActivity.class));
     }

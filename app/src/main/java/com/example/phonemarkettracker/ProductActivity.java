@@ -17,14 +17,14 @@ import android.widget.Toast;
 import java.util.List;
 import java.util.Locale;
 
-/** Displays phones stored in SQLite and adds available units to the current cart. */
+//displays phones stored in sqlite and adds available units to the current cart.
 public class ProductActivity extends Activity {
 
     private DatabasePMT databasePMT;
     private LinearLayout productContainer;
     private TextView productCountText;
 
-    // create
+    //1.screen setup
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -35,14 +35,12 @@ public class ProductActivity extends Activity {
         setUpNavigation();
     }
 
-    // display output
     @Override
     protected void onResume() {
         super.onResume();
         displayAvailablePhones();
     }
 
-    // read
     private void connectViews() {
         productContainer = findViewById(R.id.productContainer);
         productCountText = findViewById(R.id.textProductCount);
@@ -54,7 +52,7 @@ public class ProductActivity extends Activity {
         findViewById(R.id.buttonSignOut).setOnClickListener(view -> signOut());
     }
 
-    // read
+    //2.read phones and display one card per phone
     private void displayAvailablePhones() {
         List<Phone> phones = databasePMT.getAllPhones();
         productContainer.removeAllViews();
@@ -74,7 +72,27 @@ public class ProductActivity extends Activity {
         );
     }
 
-    // create
+    //3.process: add selected phone
+    private void addPhoneToCart(Phone phone) {
+        boolean phoneAdded = CartManager.addPhone(phone);
+
+        if (!phoneAdded) {
+            Toast.makeText(
+                    this,
+                    "No more stock available for " + phone.getModel(),
+                    Toast.LENGTH_SHORT
+            ).show();
+            return;
+        }
+
+        productCountText.setText(
+                databasePMT.getAllPhones().size() + " phones available  •  " +
+                        CartManager.getTotalQuantity() + " in cart"
+        );
+        Toast.makeText(this, phone.getModel() + " added to cart", Toast.LENGTH_SHORT).show();
+    }
+
+    //4.output: build each phone card
     private View createPhoneCard(Phone phone) {
         LinearLayout phoneCard = new LinearLayout(this);
         phoneCard.setOrientation(LinearLayout.HORIZONTAL);
@@ -96,7 +114,6 @@ public class ProductActivity extends Activity {
         return phoneCard;
     }
 
-    // create
     private FrameLayout createPhoneTile(Phone phone) {
         FrameLayout phoneTile = new FrameLayout(this);
         phoneTile.setBackground(createRoundedBackground(
@@ -119,7 +136,6 @@ public class ProductActivity extends Activity {
         return phoneTile;
     }
 
-    // create
     private LinearLayout createPhoneDetails(Phone phone) {
         LinearLayout details = new LinearLayout(this);
         details.setOrientation(LinearLayout.VERTICAL);
@@ -160,7 +176,6 @@ public class ProductActivity extends Activity {
         return details;
     }
 
-    // create
     private Button createAddButton(Phone phone) {
         Button addButton = new Button(this);
         addButton.setText(phone.getStockQuantity() > 0 ? "ADD" : "SOLD\nOUT");
@@ -176,50 +191,7 @@ public class ProductActivity extends Activity {
         return addButton;
     }
 
-    // create
-    private TextView createLabel(
-            String text,
-            int textSize,
-            int colorResource,
-            boolean bold
-    ) {
-        TextView label = new TextView(this);
-        label.setText(text);
-        label.setTextColor(getColor(colorResource));
-        label.setTextSize(textSize);
-        label.setTypeface(Typeface.DEFAULT, bold ? Typeface.BOLD : Typeface.NORMAL);
-        return label;
-    }
-
-    // create
-    private GradientDrawable createRoundedBackground(int colorResource, int radiusDp) {
-        GradientDrawable background = new GradientDrawable();
-        background.setColor(getColor(colorResource));
-        background.setCornerRadius(dp(radiusDp));
-        return background;
-    }
-
-    // create
-    private void addPhoneToCart(Phone phone) {
-        boolean phoneAdded = CartManager.addPhone(phone);
-
-        if (!phoneAdded) {
-            Toast.makeText(
-                    this,
-                    "No more stock available for " + phone.getModel(),
-                    Toast.LENGTH_SHORT
-            ).show();
-            return;
-        }
-
-        productCountText.setText(
-                databasePMT.getAllPhones().size() + " phones available  •  " +
-                        CartManager.getTotalQuantity() + " in cart"
-        );
-        Toast.makeText(this, phone.getModel() + " added to cart", Toast.LENGTH_SHORT).show();
-    }
-
-    // read
+    //5.styling only: colours, labels and sizes
     private int getBrandColor(String brand) {
         String normalizedBrand = brand.toLowerCase(Locale.ROOT);
 
@@ -238,7 +210,6 @@ public class ProductActivity extends Activity {
         return R.color.apple_phone;
     }
 
-    // read
     private int getBrandTileColor(String brand) {
         String normalizedBrand = brand.toLowerCase(Locale.ROOT);
 
@@ -257,7 +228,27 @@ public class ProductActivity extends Activity {
         return R.color.apple_tile;
     }
 
-    // display output
+    private TextView createLabel(
+            String text,
+            int textSize,
+            int colorResource,
+            boolean bold
+    ) {
+        TextView label = new TextView(this);
+        label.setText(text);
+        label.setTextColor(getColor(colorResource));
+        label.setTextSize(textSize);
+        label.setTypeface(Typeface.DEFAULT, bold ? Typeface.BOLD : Typeface.NORMAL);
+        return label;
+    }
+
+    private GradientDrawable createRoundedBackground(int colorResource, int radiusDp) {
+        GradientDrawable background = new GradientDrawable();
+        background.setColor(getColor(colorResource));
+        background.setCornerRadius(dp(radiusDp));
+        return background;
+    }
+
     private String formatMoney(double amount) {
         return String.format(Locale.US, "RM %,.0f", amount);
     }
@@ -266,6 +257,7 @@ public class ProductActivity extends Activity {
         return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
+    //6.navigation and sign out
     private void openChartScreen() {
         startActivity(new Intent(this, ChartActivity.class));
     }
@@ -274,7 +266,6 @@ public class ProductActivity extends Activity {
         startActivity(new Intent(this, CartActivity.class));
     }
 
-    // delete current session
     private void signOut() {
         CartManager.clear();
         UserSession.signOut();

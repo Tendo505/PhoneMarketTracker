@@ -1,6 +1,6 @@
 package com.example.phonemarkettracker;
 
-/** Stores today's sold quantity for one phone model. */
+//stores today's sold quantity for one phone model.
 public class PhoneSalesRecord {
 
     private final String phoneName;

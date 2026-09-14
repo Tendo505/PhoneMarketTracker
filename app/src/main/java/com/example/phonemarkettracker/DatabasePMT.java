@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/** Manages users, phones, completed sales, and daily sales results in one SQLite database. */
+//manages users, phones, completed sales, and daily sales results in one sqlite database.
 public class DatabasePMT extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "phonemarkettracker.db";
@@ -54,19 +54,17 @@ public class DatabasePMT extends SQLiteOpenHelper {
     private static final String COLUMN_UNIT_COST = "unit_cost";
     private static final String COLUMN_UNIT_PRICE = "unit_price";
 
-    // create
+    //1.database setup and upgrades
     public DatabasePMT(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
-    // create
     @Override
     public void onConfigure(SQLiteDatabase database) {
         super.onConfigure(database);
         database.setForeignKeyConstraintsEnabled(true);
     }
 
-    // create
     @Override
     public void onCreate(SQLiteDatabase database) {
         createUsersTable(database);
@@ -75,7 +73,6 @@ public class DatabasePMT extends SQLiteOpenHelper {
         createSalesTables(database);
     }
 
-    // update
     @Override
     public void onUpgrade(
             SQLiteDatabase database,
@@ -98,7 +95,7 @@ public class DatabasePMT extends SQLiteOpenHelper {
         }
     }
 
-    // create
+    //2.create tables and starting phones
     private void createUsersTable(SQLiteDatabase database) {
         String createUsersTable =
                 "CREATE TABLE " + TABLE_USERS + " (" +
@@ -111,7 +108,6 @@ public class DatabasePMT extends SQLiteOpenHelper {
         database.execSQL(createUsersTable);
     }
 
-    // create
     private void createPhonesTable(SQLiteDatabase database) {
         String createPhonesTable =
                 "CREATE TABLE IF NOT EXISTS " + TABLE_PHONES + " (" +
@@ -126,7 +122,6 @@ public class DatabasePMT extends SQLiteOpenHelper {
         database.execSQL(createPhonesTable);
     }
 
-    // create
     private void createSalesTables(SQLiteDatabase database) {
         String createSalesTable =
                 "CREATE TABLE IF NOT EXISTS " + TABLE_SALES + " (" +
@@ -158,7 +153,6 @@ public class DatabasePMT extends SQLiteOpenHelper {
         database.execSQL(createSaleItemsTable);
     }
 
-    // create
     private void insertCurrentPhoneDetails(SQLiteDatabase database) {
         for (String[] phoneDetails : DEFAULT_PHONE_DETAILS) {
             addPhoneIfMissing(
@@ -172,7 +166,6 @@ public class DatabasePMT extends SQLiteOpenHelper {
         }
     }
 
-    // create
     private void addPhoneIfMissing(
             SQLiteDatabase database,
             String brand,
@@ -206,7 +199,7 @@ public class DatabasePMT extends SQLiteOpenHelper {
         database.insert(TABLE_PHONES, null, phoneDetails);
     }
 
-    // create
+    //3.accounts: register and verify
     public boolean addUser(
             String fullName,
             String emailAddress,
@@ -223,7 +216,6 @@ public class DatabasePMT extends SQLiteOpenHelper {
         return newUserId != -1;
     }
 
-    // read
     public boolean emailExists(String emailAddress) {
         SQLiteDatabase database = getReadableDatabase();
         Cursor cursor = database.rawQuery(
@@ -238,12 +230,10 @@ public class DatabasePMT extends SQLiteOpenHelper {
         return emailFound;
     }
 
-    // validate input
     public boolean checkUser(String emailAddress, String password) {
         return getUserId(emailAddress, password) != -1;
     }
 
-    // read
     public int getUserId(String emailAddress, String password) {
         SQLiteDatabase database = getReadableDatabase();
         Cursor cursor = database.rawQuery(
@@ -264,7 +254,11 @@ public class DatabasePMT extends SQLiteOpenHelper {
         return userId;
     }
 
-    // read
+    private String normalizeEmail(String emailAddress) {
+        return emailAddress.trim().toLowerCase(Locale.ROOT);
+    }
+
+    //4.read phone records
     public List<Phone> getAllPhones() {
         List<Phone> phones = new ArrayList<>();
         SQLiteDatabase database = getReadableDatabase();
@@ -286,7 +280,18 @@ public class DatabasePMT extends SQLiteOpenHelper {
         return phones;
     }
 
-    // create
+    private Phone readPhone(Cursor cursor) {
+        return new Phone(
+                cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PHONE_ID)),
+                cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_BRAND)),
+                cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MODEL)),
+                cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_COST_PRICE)),
+                cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_SELLING_PRICE)),
+                cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_STOCK_QUANTITY))
+        );
+    }
+
+    //5.checkout: validate, save items and reduce stock
     public boolean completeSale(int userId, List<CartItem> cartItems) {
         if (userId <= 0 || cartItems == null || cartItems.isEmpty()) {
             return false;
@@ -301,6 +306,7 @@ public class DatabasePMT extends SQLiteOpenHelper {
             ContentValues saleDetails = new ContentValues();
             saleDetails.put(COLUMN_USER_ID, userId);
             saleDetails.put(COLUMN_SALE_DATE, getTodayDate());
+            //kira amd simpan jumlah transaction.
             saleDetails.put(COLUMN_TOTAL_COST, SalesCalculator.calculateTotalCost(cartItems));
             saleDetails.put(COLUMN_TOTAL_REVENUE, SalesCalculator.calculateTotalRevenue(cartItems));
             saleDetails.put(COLUMN_PROFIT_LOSS, SalesCalculator.calculateProfitLoss(cartItems));
@@ -321,13 +327,71 @@ public class DatabasePMT extends SQLiteOpenHelper {
         }
     }
 
-    // read
+    private void validateAvailableStock(
+            SQLiteDatabase database,
+            List<CartItem> cartItems
+    ) {
+        for (CartItem cartItem : cartItems) {
+            Cursor cursor = database.rawQuery(
+                    "SELECT " + COLUMN_STOCK_QUANTITY +
+                            " FROM " + TABLE_PHONES +
+                            " WHERE " + COLUMN_PHONE_ID + " = ?",
+                    new String[]{String.valueOf(cartItem.getPhone().getPhoneId())}
+            );
+
+            boolean phoneFound = cursor.moveToFirst();
+            int availableStock = phoneFound ? cursor.getInt(0) : 0;
+            cursor.close();
+
+            //pastikan stok mencukupi.
+            if (!phoneFound || availableStock < cartItem.getQuantity()) {
+                throw new IllegalStateException("Phone stock is no longer available");
+            }
+        }
+    }
+
+    private void insertSaleItem(
+            SQLiteDatabase database,
+            long saleId,
+            CartItem cartItem
+    ) {
+        Phone phone = cartItem.getPhone();
+        ContentValues itemDetails = new ContentValues();
+        itemDetails.put(COLUMN_SALE_ID, saleId);
+        itemDetails.put(COLUMN_PHONE_ID, phone.getPhoneId());
+        itemDetails.put(COLUMN_QUANTITY, cartItem.getQuantity());
+        itemDetails.put(COLUMN_UNIT_COST, phone.getCostPrice());
+        itemDetails.put(COLUMN_UNIT_PRICE, phone.getSellingPrice());
+        database.insertOrThrow(TABLE_SALE_ITEMS, null, itemDetails);
+    }
+
+    private void reducePhoneStock(SQLiteDatabase database, CartItem cartItem) {
+        //baki stok = stok semasa - kuantiti terjual.
+        SQLiteStatement stockUpdate = database.compileStatement(
+                "UPDATE " + TABLE_PHONES +
+                        " SET " + COLUMN_STOCK_QUANTITY + " = " +
+                        COLUMN_STOCK_QUANTITY + " - ?" +
+                        " WHERE " + COLUMN_PHONE_ID + " = ?" +
+                        " AND " + COLUMN_STOCK_QUANTITY + " >= ?"
+        );
+        stockUpdate.bindLong(1, cartItem.getQuantity());
+        stockUpdate.bindLong(2, cartItem.getPhone().getPhoneId());
+        stockUpdate.bindLong(3, cartItem.getQuantity());
+        int updatedRows = stockUpdate.executeUpdateDelete();
+
+        if (updatedRows != 1) {
+            throw new IllegalStateException("Phone stock could not be updated");
+        }
+    }
+
+    //6.daily totals and quantity ranking
     public DailySalesSummary getTodaySalesSummary() {
         SQLiteDatabase database = getReadableDatabase();
         double totalCost = 0.0;
         double totalRevenue = 0.0;
         double profitLoss = 0.0;
 
+        //jumlah kos, hasil dan untung harian; sifar.
         Cursor totalsCursor = database.rawQuery(
                 "SELECT COALESCE(SUM(" + COLUMN_TOTAL_COST + "), 0), " +
                         "COALESCE(SUM(" + COLUMN_TOTAL_REVENUE + "), 0), " +
@@ -351,8 +415,10 @@ public class DatabasePMT extends SQLiteOpenHelper {
         int mostSoldQuantity = 0;
 
         for (PhoneSalesRecord phoneSalesRecord : phoneSalesRecords) {
+            //jumlah unit terjual hari ini.
             totalQuantitySold += phoneSalesRecord.getQuantitySold();
 
+            //pilih kuantiti tertinggi; seri kekalkan yang pertama.
             if (phoneSalesRecord.getQuantitySold() > mostSoldQuantity) {
                 mostSoldQuantity = phoneSalesRecord.getQuantitySold();
                 mostSoldPhone = phoneSalesRecord.getPhoneName();
@@ -369,10 +435,10 @@ public class DatabasePMT extends SQLiteOpenHelper {
         );
     }
 
-    // read
     public List<PhoneSalesRecord> getTodayPhoneSales() {
         List<PhoneSalesRecord> phoneSalesRecords = new ArrayList<>();
         SQLiteDatabase database = getReadableDatabase();
+        //jumlah unit terjual hari ini mengikut telefon.
         String query =
                 "SELECT " + TABLE_PHONES + "." + COLUMN_BRAND + ", " +
                         TABLE_PHONES + "." + COLUMN_MODEL + ", " +
@@ -401,7 +467,7 @@ public class DatabasePMT extends SQLiteOpenHelper {
         return phoneSalesRecords;
     }
 
-    // delete
+    //7.delete today's sales
     public void resetTodaySales() {
         SQLiteDatabase database = getWritableDatabase();
         database.delete(
@@ -411,83 +477,8 @@ public class DatabasePMT extends SQLiteOpenHelper {
         );
     }
 
-    // validate input
-    private void validateAvailableStock(
-            SQLiteDatabase database,
-            List<CartItem> cartItems
-    ) {
-        for (CartItem cartItem : cartItems) {
-            Cursor cursor = database.rawQuery(
-                    "SELECT " + COLUMN_STOCK_QUANTITY +
-                            " FROM " + TABLE_PHONES +
-                            " WHERE " + COLUMN_PHONE_ID + " = ?",
-                    new String[]{String.valueOf(cartItem.getPhone().getPhoneId())}
-            );
-
-            boolean phoneFound = cursor.moveToFirst();
-            int availableStock = phoneFound ? cursor.getInt(0) : 0;
-            cursor.close();
-
-            if (!phoneFound || availableStock < cartItem.getQuantity()) {
-                throw new IllegalStateException("Phone stock is no longer available");
-            }
-        }
-    }
-
-    // create
-    private void insertSaleItem(
-            SQLiteDatabase database,
-            long saleId,
-            CartItem cartItem
-    ) {
-        Phone phone = cartItem.getPhone();
-        ContentValues itemDetails = new ContentValues();
-        itemDetails.put(COLUMN_SALE_ID, saleId);
-        itemDetails.put(COLUMN_PHONE_ID, phone.getPhoneId());
-        itemDetails.put(COLUMN_QUANTITY, cartItem.getQuantity());
-        itemDetails.put(COLUMN_UNIT_COST, phone.getCostPrice());
-        itemDetails.put(COLUMN_UNIT_PRICE, phone.getSellingPrice());
-        database.insertOrThrow(TABLE_SALE_ITEMS, null, itemDetails);
-    }
-
-    // update
-    private void reducePhoneStock(SQLiteDatabase database, CartItem cartItem) {
-        SQLiteStatement stockUpdate = database.compileStatement(
-                "UPDATE " + TABLE_PHONES +
-                        " SET " + COLUMN_STOCK_QUANTITY + " = " +
-                        COLUMN_STOCK_QUANTITY + " - ?" +
-                        " WHERE " + COLUMN_PHONE_ID + " = ?" +
-                        " AND " + COLUMN_STOCK_QUANTITY + " >= ?"
-        );
-        stockUpdate.bindLong(1, cartItem.getQuantity());
-        stockUpdate.bindLong(2, cartItem.getPhone().getPhoneId());
-        stockUpdate.bindLong(3, cartItem.getQuantity());
-        int updatedRows = stockUpdate.executeUpdateDelete();
-
-        if (updatedRows != 1) {
-            throw new IllegalStateException("Phone stock could not be updated");
-        }
-    }
-
-    // read
-    private Phone readPhone(Cursor cursor) {
-        return new Phone(
-                cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PHONE_ID)),
-                cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_BRAND)),
-                cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MODEL)),
-                cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_COST_PRICE)),
-                cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_SELLING_PRICE)),
-                cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_STOCK_QUANTITY))
-        );
-    }
-
-    // read
+    //8.date helper
     private String getTodayDate() {
         return LocalDate.now().toString();
-    }
-
-    // validate input
-    private String normalizeEmail(String emailAddress) {
-        return emailAddress.trim().toLowerCase(Locale.ROOT);
     }
 }

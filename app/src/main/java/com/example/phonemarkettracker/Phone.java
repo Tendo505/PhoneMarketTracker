@@ -1,6 +1,6 @@
 package com.example.phonemarkettracker;
 
-/** Stores one phone record read from SQLite. */
+//stores one phone record read from sqlite.
 public class Phone {
 
     private final int phoneId;

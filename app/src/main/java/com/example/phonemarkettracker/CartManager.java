@@ -3,15 +3,32 @@ package com.example.phonemarkettracker;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Keeps the current cart in memory until checkout, sign out, or app closure. */
+//keeps the current cart in memory until checkout, sign out, or app closure.
 public class CartManager {
 
     private static final List<CartItem> CART_ITEMS = new ArrayList<>();
 
+    //1.shared cart setup
     private CartManager() {
     }
 
-    // create
+    //2.read cart and count units
+    public static List<CartItem> getItems() {
+        return new ArrayList<>(CART_ITEMS);
+    }
+
+    public static int getTotalQuantity() {
+        //jumlah unit dalam troli.
+        int totalQuantity = 0;
+
+        for (CartItem cartItem : CART_ITEMS) {
+            totalQuantity += cartItem.getQuantity();
+        }
+
+        return totalQuantity;
+    }
+
+    //3.add, change or remove selections
     public static boolean addPhone(Phone phone) {
         CartItem existingItem = findItem(phone.getPhoneId());
 
@@ -27,29 +44,11 @@ public class CartManager {
         return true;
     }
 
-    // read
-    public static List<CartItem> getItems() {
-        return new ArrayList<>(CART_ITEMS);
-    }
-
-    // read
-    public static int getTotalQuantity() {
-        int totalQuantity = 0;
-
-        for (CartItem cartItem : CART_ITEMS) {
-            totalQuantity += cartItem.getQuantity();
-        }
-
-        return totalQuantity;
-    }
-
-    // update
     public static boolean increaseQuantity(int phoneId) {
         CartItem cartItem = findItem(phoneId);
         return cartItem != null && cartItem.increaseQuantity();
     }
 
-    // update
     public static void decreaseQuantity(int phoneId) {
         CartItem cartItem = findItem(phoneId);
 
@@ -62,7 +61,6 @@ public class CartManager {
         }
     }
 
-    // delete
     public static void removeItem(int phoneId) {
         CartItem cartItem = findItem(phoneId);
 
@@ -71,12 +69,11 @@ public class CartManager {
         }
     }
 
-    // delete
     public static void clear() {
         CART_ITEMS.clear();
     }
 
-    // read
+    //4.search for a selected phone
     private static CartItem findItem(int phoneId) {
         for (CartItem cartItem : CART_ITEMS) {
             if (cartItem.getPhone().getPhoneId() == phoneId) {

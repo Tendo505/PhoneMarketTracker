@@ -1,16 +1,18 @@
 package com.example.phonemarkettracker;
 
-/** Stores a selected phone and its requested quantity. */
+//stores a selected phone and its requested quantity.
 public class CartItem {
 
     private final Phone phone;
     private int quantity;
 
+    //1.store the selected phone
     public CartItem(Phone phone) {
         this.phone = phone;
         quantity = 1;
     }
 
+    //2.read item data
     public Phone getPhone() {
         return phone;
     }
@@ -19,7 +21,7 @@ public class CartItem {
         return quantity;
     }
 
-    // update
+    //3.change quantity within stock limits
     public boolean increaseQuantity() {
         if (quantity >= phone.getStockQuantity()) {
             return false;
@@ -29,7 +31,6 @@ public class CartItem {
         return true;
     }
 
-    // update
     public boolean decreaseQuantity() {
         if (quantity <= 1) {
             return false;
@@ -39,17 +40,15 @@ public class CartItem {
         return true;
     }
 
-    // calculate result
+    //4.calculate this item's totals
     public double calculateCostTotal() {
         return phone.getCostPrice() * quantity;
     }
 
-    // calculate result
     public double calculateRevenueTotal() {
         return phone.getSellingPrice() * quantity;
     }
 
-    // calculate result
     public double calculateProfitLoss() {
         return calculateRevenueTotal() - calculateCostTotal();
     }

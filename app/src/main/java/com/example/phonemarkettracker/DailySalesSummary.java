@@ -1,6 +1,6 @@
 package com.example.phonemarkettracker;
 
-/** Contains the calculated sales summary for the current day. */
+//contains the calculated sales summary for the current day.
 public class DailySalesSummary {
 
     private final int totalQuantitySold;
