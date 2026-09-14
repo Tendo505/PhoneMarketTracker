@@ -1,119 +1,117 @@
-//Phone page
-package com.gfg.calculator_java;
+package com.example.phonemarkettracker;
 
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
-public class MainActivity extends AppCompatActivity {
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
-    private TextView Phone, Phone2, Phone3
-    private EditText InputAmount, InputAmount2, InputAmount3;
-    private Button AddAmount, AddAmount2, AddAmount3;
-    private Button ToAccessory, ToCart;
-    private double phoneAmnt, phoneAmnt2, phoneAmnt3, price, price2, price3;
+public class MainActivity extends AppCompatActivity
+        implements PhoneAdapter.OnPhoneActionListener {
 
+    private RecyclerView recyclerPhones;
+    private TextView tvTotal;
+    private Button toAccessory, toCart;
+
+    private DatabasePMT databasePMT;
+    private PhoneAdapter adapter;
+    private final List<Phone> phoneList = new ArrayList<>();
+
+    // phoneId -> selected quantity
+    private final Map<Integer, Integer> selectedQuantities = new HashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Phone.SetText=("Samsung Galaxy S17" +
-                "RM1799");
-        InputAmount= findViewById(R.id.InputAmount);
-        AddAmount = findViewById(R.id.AddAmount);
+        recyclerPhones = findViewById(R.id.recyclerPhones);
+        tvTotal        = findViewById(R.id.tvTotal);
+        toAccessory    = findViewById(R.id.ToAccessory);
+        toCart         = findViewById(R.id.ToCart);
 
-        Phone2.SetText=("Iphone17" +
-                "RM3999");
-        InputAmount2= findViewById(R.id.InputAmount2);
-        AddAmount2 = findViewById(R.id.AddAmount2);
+        databasePMT = new DatabasePMT(this);
 
-        Phone.SetText3=("Xiomi 17" +
-                "RM3989");
-        InputAmount3= findViewById(R.id.InputAmount3);
-        AddAmount3 = findViewById(R.id.AddAmount3);
+        recyclerPhones.setLayoutManager(new LinearLayoutManager(this));
+        adapter = new PhoneAdapter(phoneList, this);
+        recyclerPhones.setAdapter(adapter);
 
+        loadPhones();
 
-        InputAmount.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (editText.getText().length() > 0) {
-                    phoneAmnt = Double.parseDouble(editText.getText().toString());
-                    isMultiplication = true;
+        toAccessory.setOnClickListener(v ->
+                Toast.makeText(this, "Accessories page", Toast.LENGTH_SHORT).show());
 
-                }
+        toCart.setOnClickListener(v ->
+                Toast.makeText(this, "Cart page", Toast.LENGTH_SHORT).show());
+    }
+
+    private void loadPhones() {
+        phoneList.clear();
+        phoneList.addAll(databasePMT.getAllPhones());
+        adapter.notifyDataSetChanged();
+        updateTotal();
+    }
+
+    private void updateTotal() {
+        double total = 0.0;
+        for (Phone phone : phoneList) {
+            Integer qty = selectedQuantities.get(phone.getId());
+            if (qty != null && qty > 0) {
+                total += qty * phone.getSellingPrice();
             }
-        });
+        }
+        tvTotal.setText(String.format(Locale.US, "Total: RM %.2f", total));
+    }
 
-        InputAmount2.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (editText.getText().length() > 0) {
-                    phoneAmnt2= Double.parseDouble(editText.getText().toString());
-                    isMultiplication= true;
-                }
-            }
-        });
+    @Override
+    public void onQuantityChanged(Phone phone, int newQuantity) {
+        if (newQuantity <= 0) {
+            selectedQuantities.remove(phone.getId());
+        } else {
+            selectedQuantities.put(phone.getId(), newQuantity);
+        }
+        updateTotal();
+    }
 
-        InputAmount3.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (editText.getText().length() > 0) {
-                    phoneAmnt3 = Double.parseDouble(editText.getText().toString());
-                    isMultiplication = true;
+    @Override
+    public void onSelectPhone(Phone phone, int quantity) {
+        if (quantity <= 0) {
+            Toast.makeText(this,
+                    "Please enter a quantity greater than 0.",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-                }
-            }
-        });
+        boolean success = databasePMT.reduceStock(phone.getId(), quantity);
+        if (success) {
+            Toast.makeText(this,
+                    quantity + " x " + phone.getBrand() + " " + phone.getModel()
+                            + " added to cart.",
+                    Toast.LENGTH_SHORT).show();
 
+            selectedQuantities.remove(phone.getId());
+            loadPhones(); // refresh stock + reset quantities
+        } else {
+            Toast.makeText(this,
+                    "Not enough stock available.",
+                    Toast.LENGTH_SHORT).show();
+        }
+    }
 
-
-        AddAmount.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (editText.getText().length() > 0) {
-                    price = Double.parseDouble(editText.getText().toString());
-                    resultText.setText(String.valueOf(phoneAmnt * 1999);
-                }
-            }
-        });
-
-        AddAmount2.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (editText.getText().length() > 0) {
-                    price2 = Double.parseDouble(editText.getText().toString());
-                    resultText.setText(String.valueOf(phoneAmnt2 * 3999);
-                }
-            }
-        });
-
-        AddAmount3.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (editText.getText().length() > 0) {
-                    price3 = Double.parseDouble(editText.getText().toString());
-                    resultText.setText(String.valueOf(phoneAmnt3 * 3989);
-                }
-            }
-        });
-
-        ToAccessory.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-            }
-        });
-
-        ToCart.OnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-            }
-        });
+    @Override
+    protected void onDestroy() {
+        if (databasePMT != null) {
+            databasePMT.close();
+        }
+        super.onDestroy();
     }
 }
