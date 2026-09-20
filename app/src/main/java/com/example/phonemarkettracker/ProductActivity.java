@@ -68,13 +68,13 @@ public class ProductActivity extends Activity {
         );
         productCountText.setText(
                 countMessage + " available  •  " +
-                        CartManager.getTotalQuantity() + " in cart"
+                        AppProcesses.getTotalQuantity() + " in cart"
         );
     }
 
     //3.process: add selected phone
     private void addPhoneToCart(Phone phone) {
-        boolean phoneAdded = CartManager.addPhone(phone);
+        boolean phoneAdded = AppProcesses.addPhone(phone);
 
         if (!phoneAdded) {
             Toast.makeText(
@@ -87,7 +87,7 @@ public class ProductActivity extends Activity {
 
         productCountText.setText(
                 databasePMT.getAllPhones().size() + " phones available  •  " +
-                        CartManager.getTotalQuantity() + " in cart"
+                        AppProcesses.getTotalQuantity() + " in cart"
         );
         Toast.makeText(this, phone.getModel() + " added to cart", Toast.LENGTH_SHORT).show();
     }
@@ -267,8 +267,8 @@ public class ProductActivity extends Activity {
     }
 
     private void signOut() {
-        CartManager.clear();
-        UserSession.signOut();
+        AppProcesses.clearCart();
+        AppProcesses.signOut();
 
         Intent signInIntent = new Intent(this, LoginActivity.class);
         signInIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);

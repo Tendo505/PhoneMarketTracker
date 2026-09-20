@@ -1,13 +1,17 @@
 package com.example.phonemarkettracker;
 
+import com.example.phonemarkettracker.AppProcesses.DailySalesSummary;
+import com.example.phonemarkettracker.AppProcesses.PhoneSalesRecord;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.TextView;
 import android.widget.Toast;
 
+
+import android.graphics.Color;
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
@@ -15,18 +19,18 @@ import com.github.mikephil.charting.data.BarData;
 import com.github.mikephil.charting.data.BarDataSet;
 import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
-
 import java.util.ArrayList;
 import java.util.List;
+
+
 import java.util.Locale;
 
 //displays today's persisted sales, profit or loss, and most-sold phones.
 public class ChartActivity extends Activity {
-
     private static final float BAR_WIDTH = 0.58f;
     private static final int CHART_ANIMATION_DURATION = 700;
 
-    private DatabasePMT databasePMT;
+    private AppProcesses appProcesses;
     private BarChart phoneSalesChart;
     private TextView totalSoldText;
     private TextView profitLossText;
@@ -39,7 +43,7 @@ public class ChartActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chart);
 
-        databasePMT = new DatabasePMT(this);
+        appProcesses = new AppProcesses(new DatabasePMT(this));
         connectViews();
         setUpActions();
     }
@@ -66,8 +70,8 @@ public class ChartActivity extends Activity {
 
     //2.read daily results and display chart
     private void displayDailySales() {
-        DailySalesSummary dailySalesSummary = databasePMT.getTodaySalesSummary();
-        List<PhoneSalesRecord> phoneSalesRecords = databasePMT.getTodayPhoneSales();
+        DailySalesSummary dailySalesSummary = appProcesses.getTodaySalesSummary();
+        List<PhoneSalesRecord> phoneSalesRecords = appProcesses.getTodayPhoneSales();
 
         totalSoldText.setText(
                 getResources().getQuantityString(
@@ -88,6 +92,33 @@ public class ChartActivity extends Activity {
         displayPhoneSalesChart(phoneSalesRecords);
     }
 
+    //3.process: confirm and reset today
+    private void confirmDailyReset() {
+        new AlertDialog.Builder(this)
+                .setTitle("Close today's session?")
+                .setMessage(
+                        "This clears today's sales totals, profit or loss, most-sold ranking, " +
+                                "chart data, and cart. Users, phone details, prices, and stock remain."
+                )
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Close Day", (dialog, which) -> resetDailyTracking())
+                .show();
+    }
+
+    private void resetDailyTracking() {
+        appProcesses.closeDay();
+        displayDailySales();
+        Toast.makeText(this, "Today's tracking has been reset", Toast.LENGTH_SHORT).show();
+    }
+
+    //4.output formatting
+    private String formatSignedMoney(double amount) {
+        String sign = amount >= 0 ? "+" : "−";
+        return sign + String.format(Locale.US, "RM %,.2f", Math.abs(amount));
+    }
+
+    //5.chart styling only
+    //5.chart bars and labels
     private void displayPhoneSalesChart(List<PhoneSalesRecord> phoneSalesRecords) {
         List<BarEntry> phoneSalesEntries = new ArrayList<>();
         List<String> phoneLabels = new ArrayList<>();
@@ -131,27 +162,7 @@ public class ChartActivity extends Activity {
         phoneSalesChart.invalidate();
     }
 
-    //3.process: confirm and reset today
-    private void confirmDailyReset() {
-        new AlertDialog.Builder(this)
-                .setTitle("Close today's session?")
-                .setMessage(
-                        "This clears today's sales totals, profit or loss, most-sold ranking, " +
-                                "chart data, and cart. Users, phone details, prices, and stock remain."
-                )
-                .setNegativeButton("Cancel", null)
-                .setPositiveButton("Close Day", (dialog, which) -> resetDailyTracking())
-                .show();
-    }
-
-    private void resetDailyTracking() {
-        databasePMT.resetTodaySales();
-        CartManager.clear();
-        displayDailySales();
-        Toast.makeText(this, "Today's tracking has been reset", Toast.LENGTH_SHORT).show();
-    }
-
-    //4.output formatting
+    //shorten displayed names
     private String createShortPhoneLabel(String phoneName) {
         String shortLabel = phoneName
                 .replace("Apple ", "")
@@ -168,12 +179,7 @@ public class ChartActivity extends Activity {
         return shortLabel;
     }
 
-    private String formatSignedMoney(double amount) {
-        String sign = amount >= 0 ? "+" : "−";
-        return sign + String.format(Locale.US, "RM %,.2f", Math.abs(amount));
-    }
-
-    //5.chart styling only
+    //chart appearance
     private void stylePhoneSalesDataSet(BarDataSet phoneSalesDataSet) {
         phoneSalesDataSet.setColors(
                 Color.parseColor("#3F51B5"),
@@ -220,6 +226,7 @@ public class ChartActivity extends Activity {
         verticalAxis.setDrawAxisLine(false);
         verticalAxis.setGridColor(Color.parseColor("#E6EBF2"));
     }
+
 
     //6.navigation
     private void openProductMenu() {

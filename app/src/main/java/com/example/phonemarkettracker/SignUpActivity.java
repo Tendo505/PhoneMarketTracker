@@ -3,8 +3,6 @@ package com.example.phonemarkettracker;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.text.TextUtils;
-import android.util.Patterns;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
@@ -15,7 +13,6 @@ import android.widget.Toast;
 public class SignUpActivity extends Activity {
 
     private static final String EXTRA_PREVIEW_EMAIL = "preview_email";
-    private static final int MINIMUM_PASSWORD_LENGTH = 6;
 
     private EditText fullNameInput;
     private EditText emailInput;
@@ -83,23 +80,10 @@ public class SignUpActivity extends Activity {
         String password = readPassword();
         String confirmedPassword = readConfirmedPassword();
 
-        if (TextUtils.isEmpty(fullName)) {
-            displayInputError(fullNameInput, "Enter your full name");
-            return;
-        }
-
-        if (!Patterns.EMAIL_ADDRESS.matcher(emailAddress).matches()) {
-            displayInputError(emailInput, "Enter a valid email address");
-            return;
-        }
-
-        if (password.length() < MINIMUM_PASSWORD_LENGTH) {
-            displayInputError(passwordInput, "Use at least 6 characters");
-            return;
-        }
-
-        if (!password.equals(confirmedPassword)) {
-            displayInputError(confirmPasswordInput, "Passwords do not match");
+        AppProcesses.Error error = AppProcesses.validateRegistration(
+                fullName, emailAddress, password, confirmedPassword);
+        if (error != null) {
+            displayInputError(findInputField(error.field), error.message);
             return;
         }
 
@@ -133,6 +117,16 @@ public class SignUpActivity extends Activity {
     }
 
     //4.output
+    private EditText findInputField(AppProcesses.Field field) {
+        switch (field) {
+            case NAME: return fullNameInput;
+            case EMAIL: return emailInput;
+            case PASSWORD: return passwordInput;
+            case CONFIRM_PASSWORD: return confirmPasswordInput;
+            default: throw new IllegalArgumentException("Unknown input field");
+        }
+    }
+
     private void displayInputError(EditText inputField, String errorMessage) {
         inputField.setError(errorMessage);
         inputField.requestFocus();

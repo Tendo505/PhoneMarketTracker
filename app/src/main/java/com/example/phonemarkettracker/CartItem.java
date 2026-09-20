@@ -13,13 +13,9 @@ public class CartItem {
     }
 
     //2.read item data
-    public Phone getPhone() {
-        return phone;
-    }
+    public Phone getPhone() { return phone; }
 
-    public int getQuantity() {
-        return quantity;
-    }
+    public int getQuantity() { return quantity; }
 
     //3.change quantity within stock limits
     public boolean increaseQuantity() {
@@ -40,16 +36,4 @@ public class CartItem {
         return true;
     }
 
-    //4.calculate this item's totals
-    public double calculateCostTotal() {
-        return phone.getCostPrice() * quantity;
-    }
-
-    public double calculateRevenueTotal() {
-        return phone.getSellingPrice() * quantity;
-    }
-
-    public double calculateProfitLoss() {
-        return calculateRevenueTotal() - calculateCostTotal();
-    }
 }

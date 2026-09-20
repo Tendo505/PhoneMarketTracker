@@ -29,11 +29,10 @@ app/src/
 │   ├── java/com/example/phonemarkettracker/
 │   │   ├── LoginActivity.java / SignUpActivity.java
 │   │   ├── ProductActivity.java / CartActivity.java / ChartActivity.java
-│   │   ├── Phone.java / CartItem.java / CartManager.java
+│   │   ├── Phone.java / CartItem.java
 │   │   ├── SalesCalculator.java
-│   │   ├── DatabasePMT.java
-│   │   ├── DailySalesSummary.java / PhoneSalesRecord.java
-│   │   └── UserSession.java
+│   │   ├── AppProcesses.java
+│   │   └── DatabasePMT.java
 │   └── res/
 │       ├── layout/       # Android screen XML
 │       ├── drawable/     # Icons and backgrounds
@@ -125,20 +124,21 @@ but does not delete products or restore stock.
 
 | Calculation | Formula or behaviour | Implementation |
 |---|---|---|
-| Item cost | Unit cost × quantity | `CartItem.calculateCostTotal()` |
-| Item revenue | Unit selling price × quantity | `CartItem.calculateRevenueTotal()` |
-| Item gross profit/loss | Item revenue − item cost | `CartItem.calculateProfitLoss()` |
+| Item cost | Unit cost × quantity | `SalesCalculator.calculateItemCost()` |
+| Item revenue | Unit selling price × quantity | `SalesCalculator.calculateItemRevenue()` |
+| Item gross profit/loss | Item revenue − item cost | `SalesCalculator.calculateItemProfitLoss()` |
 | Cart cost | Sum of item costs | `SalesCalculator.calculateTotalCost()` |
 | Cart revenue | Sum of item revenues | `SalesCalculator.calculateTotalRevenue()` |
 | Cart gross profit/loss | Cart revenue − cart cost | `SalesCalculator.calculateProfitLoss()` |
-| Cart units | Sum of selected quantities | `CartManager.getTotalQuantity()` |
+| Cart units | Sum of selected quantities | `AppProcesses.getTotalQuantity()` |
 | Remaining stock | Current stock − completed-sale quantity | `DatabasePMT.reducePhoneStock()` |
-| Daily financial totals | Sum today's stored transaction costs, revenues and profits/losses | `DatabasePMT.getTodaySalesSummary()` |
-| Units sold per product | Sum today's sale-item quantities grouped by phone ID | `DatabasePMT.getTodayPhoneSales()` |
-| Daily units and top product | Sum quantities and select the highest quantity | `DatabasePMT.getTodaySalesSummary()` |
+| Daily financial totals | Sum stored financial totals for a date | `DatabasePMT.getSalesTotals()` |
+| Units sold per product | Sum sale-item quantities per phone for a date | `DatabasePMT.getPhoneSales()` |
+| Daily units and top product | Sum quantities and select the highest quantity | `AppProcesses.summarize()` |
 | Chart bars | Quantity sold determines bar height; zero-sales products are skipped | `ChartActivity.displayPhoneSalesChart()` |
 
-`DatabasePMT.completeSale()` validates current stock, stores the sale and its
+`AppProcesses.completeSale()` validates checkout input and calculates totals.
+`DatabasePMT.saveSale()` validates current stock, stores the sale and its
 items, and deducts stock inside one database transaction. A failure rolls back
 the transaction. Adding to the cart does not deduct persistent stock.
 
@@ -174,17 +174,18 @@ Android emulator, and run the `app` configuration.
 
 The debug APK is generated at `app/build/outputs/apk/debug/app-debug.apk`.
 Unit-test results are generated under `app/build/test-results/testDebugUnitTest`.
-The current local unit tests cover multi-item cost/revenue/profit calculations
-and quantity limits. They do not establish that database transactions, login,
+The local unit tests cover item/cart calculations, losses, empty totals, quantity
+limits, repeated selections, daily ranking/ties and sign-in field validation.
+They do not establish that database transactions, full authentication,
 screen navigation or daily reset have been tested on a device.
 
 ### Manual demo checklist
 
-Verification on 13 September 2026: both local unit tests passed and the debug
-APK was generated. The combined check did not fully pass: lint analysis failed
-under the machine's Java 25.0.2 runtime. Re-run with the documented Java 17
-Gradle JDK before claiming a clean lint result. No device demo was performed
-during this documentation update.
+Verification on 17 September 2026: the debug APK built, all 10 local unit tests
+passed, and lint completed with warnings and no errors using Android Studio's
+bundled JDK. Layout resources and Java-built card/chart styling were preserved.
+No device demo was performed during this refactor; use the checklist below for
+runtime verification of authentication, persistence, checkout and screen appearance.
 
 - Register and sign in; verify invalid login is rejected.
 - Add multiple products; verify quantities cannot exceed stock.
@@ -196,6 +197,15 @@ during this documentation update.
 - Confirm Close Day; verify today's chart/totals clear without restoring stock.
 
 ## Code review notes
+
+V2 has 10 main Java files. Cart/session operations are in AppProcesses; its small
+result types are nested at the bottom. Redundant formula wrappers were removed.
+
+See [CODE_FLOW.md](CODE_FLOW.md) for each class's responsibility and the checkout
+and chart call sequences. Activities handle input/output, process classes handle
+rules, and DatabasePMT owns SQL and transactional writes. SQL aggregation and
+stock guards intentionally stay in the database class. The refactor preserves
+the existing interface and database schema.
 
 Calculation comments are short Bahasa Malaysia labels beside the relevant logic.
 Use the method names in the calculation table to locate code; adding comments

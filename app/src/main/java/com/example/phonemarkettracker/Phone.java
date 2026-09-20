@@ -26,31 +26,17 @@ public class Phone {
         this.stockQuantity = stockQuantity;
     }
 
-    public int getPhoneId() {
-        return phoneId;
-    }
+    public int getPhoneId() { return phoneId; }
 
-    public String getBrand() {
-        return brand;
-    }
+    public String getBrand() { return brand; }
 
-    public String getModel() {
-        return model;
-    }
+    public String getModel() { return model; }
 
-    public double getCostPrice() {
-        return costPrice;
-    }
+    public double getCostPrice() { return costPrice; }
 
-    public double getSellingPrice() {
-        return sellingPrice;
-    }
+    public double getSellingPrice() { return sellingPrice; }
 
-    public int getStockQuantity() {
-        return stockQuantity;
-    }
+    public int getStockQuantity() { return stockQuantity; }
 
-    public String getDisplayName() {
-        return brand + " " + model;
-    }
+    public String getDisplayName() { return brand + " " + model; }
 }

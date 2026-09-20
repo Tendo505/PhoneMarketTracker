@@ -1,5 +1,7 @@
 package com.example.phonemarkettracker;
 
+import com.example.phonemarkettracker.AppProcesses.PhoneSalesRecord;
+
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -7,12 +9,11 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-//manages users, phones, completed sales, and daily sales results in one sqlite database.
+//owns sqlite tables, queries and atomic writes.
 public class DatabasePMT extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "phonemarkettracker.db";
@@ -230,10 +231,6 @@ public class DatabasePMT extends SQLiteOpenHelper {
         return emailFound;
     }
 
-    public boolean checkUser(String emailAddress, String password) {
-        return getUserId(emailAddress, password) != -1;
-    }
-
     public int getUserId(String emailAddress, String password) {
         SQLiteDatabase database = getReadableDatabase();
         Cursor cursor = database.rawQuery(
@@ -291,12 +288,9 @@ public class DatabasePMT extends SQLiteOpenHelper {
         );
     }
 
-    //5.checkout: validate, save items and reduce stock
-    public boolean completeSale(int userId, List<CartItem> cartItems) {
-        if (userId <= 0 || cartItems == null || cartItems.isEmpty()) {
-            return false;
-        }
-
+    //5.atomic sale and stock writes
+    public boolean saveSale(int userId, List<CartItem> cartItems, String saleDate,
+                            SalesCalculator.Totals totals) {
         SQLiteDatabase database = getWritableDatabase();
         database.beginTransaction();
 
@@ -305,11 +299,11 @@ public class DatabasePMT extends SQLiteOpenHelper {
 
             ContentValues saleDetails = new ContentValues();
             saleDetails.put(COLUMN_USER_ID, userId);
-            saleDetails.put(COLUMN_SALE_DATE, getTodayDate());
-            //kira amd simpan jumlah transaction.
-            saleDetails.put(COLUMN_TOTAL_COST, SalesCalculator.calculateTotalCost(cartItems));
-            saleDetails.put(COLUMN_TOTAL_REVENUE, SalesCalculator.calculateTotalRevenue(cartItems));
-            saleDetails.put(COLUMN_PROFIT_LOSS, SalesCalculator.calculateProfitLoss(cartItems));
+            saleDetails.put(COLUMN_SALE_DATE, saleDate);
+            //store totals supplied by checkout.
+            saleDetails.put(COLUMN_TOTAL_COST, totals.getTotalCost());
+            saleDetails.put(COLUMN_TOTAL_REVENUE, totals.getTotalRevenue());
+            saleDetails.put(COLUMN_PROFIT_LOSS, totals.getProfitLoss());
 
             long saleId = database.insertOrThrow(TABLE_SALES, null, saleDetails);
 
@@ -384,8 +378,8 @@ public class DatabasePMT extends SQLiteOpenHelper {
         }
     }
 
-    //6.daily totals and quantity ranking
-    public DailySalesSummary getTodaySalesSummary() {
+    //6.aggregate queries for a supplied date
+    public SalesCalculator.Totals getSalesTotals(String saleDate) {
         SQLiteDatabase database = getReadableDatabase();
         double totalCost = 0.0;
         double totalRevenue = 0.0;
@@ -398,7 +392,7 @@ public class DatabasePMT extends SQLiteOpenHelper {
                         "COALESCE(SUM(" + COLUMN_PROFIT_LOSS + "), 0) " +
                         "FROM " + TABLE_SALES +
                         " WHERE " + COLUMN_SALE_DATE + " = ?",
-                new String[]{getTodayDate()}
+                new String[]{saleDate}
         );
 
         if (totalsCursor.moveToFirst()) {
@@ -409,33 +403,10 @@ public class DatabasePMT extends SQLiteOpenHelper {
 
         totalsCursor.close();
 
-        List<PhoneSalesRecord> phoneSalesRecords = getTodayPhoneSales();
-        int totalQuantitySold = 0;
-        String mostSoldPhone = "No sales yet";
-        int mostSoldQuantity = 0;
-
-        for (PhoneSalesRecord phoneSalesRecord : phoneSalesRecords) {
-            //jumlah unit terjual hari ini.
-            totalQuantitySold += phoneSalesRecord.getQuantitySold();
-
-            //pilih kuantiti tertinggi; seri kekalkan yang pertama.
-            if (phoneSalesRecord.getQuantitySold() > mostSoldQuantity) {
-                mostSoldQuantity = phoneSalesRecord.getQuantitySold();
-                mostSoldPhone = phoneSalesRecord.getPhoneName();
-            }
-        }
-
-        return new DailySalesSummary(
-                totalQuantitySold,
-                totalCost,
-                totalRevenue,
-                profitLoss,
-                mostSoldPhone,
-                mostSoldQuantity
-        );
+        return new SalesCalculator.Totals(totalCost, totalRevenue, profitLoss);
     }
 
-    public List<PhoneSalesRecord> getTodayPhoneSales() {
+    public List<PhoneSalesRecord> getPhoneSales(String saleDate) {
         List<PhoneSalesRecord> phoneSalesRecords = new ArrayList<>();
         SQLiteDatabase database = getReadableDatabase();
         //jumlah unit terjual hari ini mengikut telefon.
@@ -455,7 +426,7 @@ public class DatabasePMT extends SQLiteOpenHelper {
                         "GROUP BY " + TABLE_PHONES + "." + COLUMN_PHONE_ID + " " +
                         "ORDER BY sold_quantity DESC, " + TABLE_PHONES + "." + COLUMN_MODEL;
 
-        Cursor cursor = database.rawQuery(query, new String[]{getTodayDate()});
+        Cursor cursor = database.rawQuery(query, new String[]{saleDate});
 
         while (cursor.moveToNext()) {
             String phoneName = cursor.getString(0) + " " + cursor.getString(1);
@@ -467,18 +438,14 @@ public class DatabasePMT extends SQLiteOpenHelper {
         return phoneSalesRecords;
     }
 
-    //7.delete today's sales
-    public void resetTodaySales() {
+    //7.delete sales for a supplied date
+    public void deleteSales(String saleDate) {
         SQLiteDatabase database = getWritableDatabase();
         database.delete(
                 TABLE_SALES,
                 COLUMN_SALE_DATE + " = ?",
-                new String[]{getTodayDate()}
+                new String[]{saleDate}
         );
     }
 
-    //8.date helper
-    private String getTodayDate() {
-        return LocalDate.now().toString();
-    }
 }

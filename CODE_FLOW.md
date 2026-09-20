@@ -1,73 +1,85 @@
 # V2 code reading guide
 
-The methods are grouped for reading. Moving a method in a file does not change
-when it runs: Android lifecycle events and method calls determine execution.
-Existing method names, method bodies, layouts and calculations are preserved.
+There are 10 main Java files. Read the screen for input/output, AppProcesses for
+the workflow, SalesCalculator for formulas, and DatabasePMT for storage.
 
-## Read the screens in this order
+## Files
 
-1. **LoginActivity**: screen setup → input readers → validation and sign-in → output → navigation.
-2. **SignUpActivity**: screen setup → input readers → validation and registration → output → navigation.
-3. **ProductActivity**: setup → read and display phones → ADD action → card construction → styling → navigation.
-4. **CartActivity**: setup → display cart and totals → confirm/save/clear → quantity controls → formatting → navigation.
-5. **ChartActivity**: setup → daily results and chart → reset → formatting → styling → navigation.
-
-`onCreate()` sets up a screen. Where present, `onResume()` refreshes its data.
-Button listeners call the action methods when the user taps a button.
-Input, process and output sometimes share a method; the section labels describe
-the main responsibility rather than claiming every method does only one thing.
-
-## Follow the main processes
-
-| Process | Follow these calls |
+| File | Responsibility |
 | --- | --- |
-| Register | SignUpActivity.validateInputAndReturnToSignIn → DatabasePMT.emailExists / addUser |
-| Sign in | LoginActivity.validateInputAndOpenProductMenu → DatabasePMT.getUserId → UserSession.signIn |
-| Display phones | ProductActivity.displayAvailablePhones → DatabasePMT.getAllPhones → loop → createPhoneCard |
-| Build one card | createPhoneCard → createPhoneTile / createPhoneDetails / createAddButton |
-| Select a phone | ProductActivity.addPhoneToCart → CartManager.addPhone |
-| Adjust quantity | CartActivity.createQuantityRow listeners → CartManager → CartItem |
-| Cart totals | CartActivity.displayCalculatedTotals → SalesCalculator → CartItem |
-| Checkout | CartActivity.confirmSale → saveSale → DatabasePMT.completeSale |
-| Save transaction | completeSale → validateAvailableStock → save sale → loop: insertSaleItem + reducePhoneStock |
-| Daily results | ChartActivity.displayDailySales → DatabasePMT.getTodaySalesSummary / getTodayPhoneSales |
-| Draw chart | ChartActivity.displayPhoneSalesChart → loop: create bar entries → setData → invalidate |
-| Close Day | ChartActivity.confirmDailyReset → resetDailyTracking → DatabasePMT.resetTodaySales |
-| Sign out | ProductActivity.signOut → CartManager.clear + UserSession.signOut |
+| LoginActivity | Sign-in fields, error display and navigation |
+| SignUpActivity | Registration fields, error display and navigation |
+| ProductActivity | Phone cards and selection buttons |
+| CartActivity | Cart display, quantity buttons and checkout confirmation |
+| ChartActivity | Daily results and chart drawing |
+| AppProcesses | Account validation, cart operations, session, checkout and daily tracking |
+| SalesCalculator | Item/cart cost, revenue and gross profit/loss formulas |
+| DatabasePMT | Tables, queries and transactional writes |
+| Phone | One phone's details |
+| CartItem | Selected phone and stock-bounded quantity |
 
-## Supporting classes
+Small daily result types live at the bottom of AppProcesses, not in separate
+files. SalesCalculator.Totals holds financial results inside SalesCalculator.
+These named values keep the code readable without using numbered array positions.
 
-- **DatabasePMT**: SQLite setup, accounts, phones, checkout, daily totals and reset.
-- **CartManager**: the shared in-memory cart, quantity changes and item searches.
-- **CartItem**: one selected phone, its quantity and its item totals.
-- **SalesCalculator**: whole-cart cost, revenue and gross profit/loss.
-- **Phone**: one phone record with prices and stock.
-- **DailySalesSummary**: carries daily totals and the top-selling phone result.
-- **PhoneSalesRecord**: carries a phone name and its sold quantity.
-- **UserSession**: remembers the current user ID in memory.
+## Find the process
 
-## Calculations and loops
+Open AppProcesses and follow the short section comments:
 
-- Item cost = cost price × quantity.
-- Item revenue = selling price × quantity.
-- Gross profit/loss = revenue − cost.
-- SalesCalculator loops through cart items to sum cost and revenue.
-- CartManager loops through cart items to count selected units.
-- DatabasePMT uses SQL SUM for daily financial totals and quantities per phone.
-- Its summary loop counts sold units and selects the highest-selling phone.
-- Remaining stock = current stock − quantity sold after successful checkout.
+1. sign-in rules: validateLogin
+2. registration rules: validateRegistration
+3. cart selections and quantity: getItems, getTotalQuantity, addPhone, increaseQuantity, decreaseQuantity, clearCart, findItem
+4. signed-in user: signIn, getUserId, signOut
+5. checkout: completeSale
+6. daily results: getTodaySalesSummary, getTodayPhoneSales, summarize
+7. close day: closeDay
+8. daily result data: DailySalesSummary and PhoneSalesRecord
 
-`phones` is the whole list; `phone` is one item in a for-each loop. If the query
-returns six records, the loop creates six cards using the same method. It is not
-hardcoded to repeat six times. There are still 13 explicit Java loops in V2.
+CartItem keeps its quantity limits; it contains no financial formulas.
+Account database reads/writes remain direct calls from the account screens;
+input rules are in AppProcesses.
 
-## Interface versus processing
+## Checkout
 
-XML defines screen layouts. Product and cart cards are also built in Java.
-Methods grouped under styling change appearance, not sales data:
-`getBrandColor()` selects a colour for the phone body and brand label;
-`getBrandTileColor()` selects the surrounding tile's background colour.
-Both return colour resource IDs; neither reads the database.
+CartActivity.confirmSale → saveSale → AppProcesses.completeSale →
+SalesCalculator → DatabasePMT.saveSale → refresh CartActivity.
 
-The cart contains estimates until checkout succeeds. Close Day deletes today's
-sales and linked items, but does not restore stock. Closing the app is not a reset.
+The process validates input and calculates totals. The database checks live stock
+and writes the sale, its items and stock changes inside one transaction.
+The cart clears only after success. A failed write rolls back the transaction.
+
+## Phones to chart
+
+ChartActivity connects the XML view with findViewById(R.id.phoneSalesChart).
+AppProcesses requests today's quantities from DatabasePMT.getPhoneSales.
+The database joins phones, sales and sale_items and groups quantities by phone ID.
+
+ChartActivity.displayPhoneSalesChart loops through those records:
+each sold phone gets a BarEntry with x = index and y = sold quantity.
+The phone label uses the same index. IndexAxisValueFormatter links those labels,
+then setData and invalidate display the bars. Unsold phones are skipped.
+Colours only affect appearance; they do not read or identify sales data.
+
+## Formulas
+
+- SalesCalculator.calculateItemCost: unit cost × quantity.
+- SalesCalculator.calculateItemRevenue: unit selling price × quantity.
+- SalesCalculator.calculateItemProfitLoss: item revenue − item cost.
+- SalesCalculator.calculateTotalCost / calculateTotalRevenue: loop and sum item totals.
+- SalesCalculator.calculateProfitLoss: cart revenue − cart cost.
+- AppProcesses.getTotalQuantity: loop and count cart units.
+- AppProcesses.summarize: count sold units and choose the highest quantity.
+- DatabasePMT.getSalesTotals / getPhoneSales: SQL SUM for the requested date.
+- DatabasePMT.reducePhoneStock: subtract sold quantity only when sufficient stock remains.
+
+SQL sums and stock guards belong to the database operations. Screen code contains
+display formatting, not financial formulas. A quantity tie keeps the first phone
+in the database query's ordering.
+
+## Preserved behaviour
+
+The screen layouts, Java-built cards, chart styling and messages are unchanged.
+The database name, schema version and stored data are unchanged.
+Close Day deletes today's sales and clears the cart, but does not restore stock.
+Sign-out clears the cart and signed-in user. Closing the app loses only in-memory
+session/cart state, not completed sales. V1 was not changed.

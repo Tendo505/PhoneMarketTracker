@@ -3,7 +3,6 @@ package com.example.phonemarkettracker;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.text.TextUtils;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
@@ -68,13 +67,10 @@ public class LoginActivity extends Activity {
         String emailAddress = readEmailAddress();
         String password = readPassword();
 
-        if (TextUtils.isEmpty(emailAddress)) {
-            displayInputError(emailInput, "Enter your email address");
-            return;
-        }
-
-        if (TextUtils.isEmpty(password)) {
-            displayInputError(passwordInput, "Enter your password");
+        AppProcesses.Error error = AppProcesses.validateLogin(emailAddress, password);
+        if (error != null) {
+            EditText field = error.field == AppProcesses.Field.EMAIL ? emailInput : passwordInput;
+            displayInputError(field, error.message);
             return;
         }
 
@@ -92,7 +88,7 @@ public class LoginActivity extends Activity {
             return;
         }
 
-        UserSession.signIn(userId);
+        AppProcesses.signIn(userId);
         openProductMenu();
     }
 
