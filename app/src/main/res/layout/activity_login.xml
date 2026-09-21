@@ -149,7 +149,6 @@
                     android:layout_marginTop="9dp"
                     android:background="@drawable/figma_input"
                     android:drawableStart="@drawable/figma_lock_icon"
-                    android:drawableEnd="@drawable/figma_eye_icon"
                     android:drawablePadding="13dp"
                     android:hint="Enter password"
                     android:imeOptions="actionDone"
@@ -207,7 +206,6 @@
                     android:layout_marginTop="14dp"
                     android:gravity="center"
                     android:includeFontPadding="false"
-                    android:text="Front-end interface preview"
                     android:textColor="#7C8AA0"
                     android:textSize="11sp" />
             </LinearLayout>

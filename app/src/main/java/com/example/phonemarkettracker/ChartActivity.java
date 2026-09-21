@@ -101,7 +101,7 @@ public class ChartActivity extends Activity {
         for (PhoneSalesRecord record : phoneSalesRecords) {
             //jumlah unit terjual.
             totalQuantitySold += record.getQuantitySold();
-            //seri kekalkan yang pertama.
+            //if equal keep the first one as first
             if (record.getQuantitySold() > mostSoldQuantity) {
                 mostSoldQuantity = record.getQuantitySold();
                 mostSoldPhone = record.getPhoneName();
@@ -131,7 +131,7 @@ public class ChartActivity extends Activity {
         Toast.makeText(this, "Today's tracking has been reset", Toast.LENGTH_SHORT).show();
     }
 
-    //4.output formatting
+    //4.output formatting for profit loss
     private String formatSignedMoney(double amount) {
         String sign = amount >= 0 ? "+" : "−";
         return sign + String.format(Locale.US, "RM %,.2f", Math.abs(amount));
@@ -148,7 +148,7 @@ public class ChartActivity extends Activity {
             }
 
             phoneSalesEntries.add(new BarEntry(
-                    //x = indeks bar, y = unit terjual.
+                    //x = index bar, y = unit terjual.
                     phoneSalesEntries.size(),
                     phoneSalesRecord.getQuantitySold()
             ));
@@ -247,7 +247,7 @@ public class ChartActivity extends Activity {
     }
 
 
-    //6.navigation
+    //6.bot nav
     private void openProductMenu() {
         startActivity(new Intent(this, ProductActivity.class));
     }

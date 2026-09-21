@@ -55,19 +55,14 @@ public class ProductActivity extends Activity {
     //2.read phones and display one card per phone
     private void displayAvailablePhones() {
         List<Phone> phones = databasePMT.getAllPhones();
-        productContainer.removeAllViews();
+        productContainer.removeAllViews(); //untuk elak duplicate old w new
 
         for (Phone phone : phones) {
             productContainer.addView(createPhoneCard(phone));
         }
 
-        String countMessage = getResources().getQuantityString(
-                R.plurals.phone_count,
-                phones.size(),
-                phones.size()
-        );
         productCountText.setText(
-                countMessage + " available  •  " +
+                phones.size() + " phones available  •  " +
                         CartManager.getTotalQuantity() + " in cart"
         );
     }
@@ -187,11 +182,11 @@ public class ProductActivity extends Activity {
         addButton.setBackgroundResource(R.drawable.figma_primary_button);
         addButton.setEnabled(phone.getStockQuantity() > 0);
         addButton.setLayoutParams(new LinearLayout.LayoutParams(dp(58), dp(46)));
-        addButton.setOnClickListener(view -> addPhoneToCart(phone));
+        addButton.setOnClickListener(view -> addPhoneToCart(phone)); //add phone
         return addButton;
     }
 
-    //5.styling only: colours, labels and sizes
+    //5.styling colours, labels and sizes
     private int getBrandColor(String brand) {
         String normalizedBrand = brand.toLowerCase(Locale.ROOT);
 

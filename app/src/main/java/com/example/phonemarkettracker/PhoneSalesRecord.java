@@ -10,6 +10,8 @@ public class PhoneSalesRecord {
         this.quantitySold = quantitySold;
     }
 
-    public String getPhoneName() { return phoneName; }
-    public int getQuantitySold() { return quantitySold; }
+    public String getPhoneName() {
+        return phoneName; }
+    public int getQuantitySold() {
+        return quantitySold; }
 }
