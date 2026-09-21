@@ -3,14 +3,13 @@ package com.example.phonemarkettracker;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.text.TextUtils;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-/** Signs in an existing user stored in the local SQLite database. */
+//signs in an existing user stored in the local sqlite database.
 public class LoginActivity extends Activity {
 
     private static final String EXTRA_PREVIEW_EMAIL = "preview_email";
@@ -19,7 +18,7 @@ public class LoginActivity extends Activity {
     private EditText passwordInput;
     private DatabasePMT databasePMT;
 
-    // create
+    //1.screen setup
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -33,20 +32,9 @@ public class LoginActivity extends Activity {
         setUpActions();
     }
 
-    // read
     private void connectViews() {
         emailInput = findViewById(R.id.editEmail);
         passwordInput = findViewById(R.id.editPassword);
-    }
-
-    // display output
-    private void displayPreviewEmail() {
-        String previewEmailAddress = getIntent().getStringExtra(EXTRA_PREVIEW_EMAIL);
-
-        if (previewEmailAddress != null) {
-            emailInput.setText(previewEmailAddress);
-            passwordInput.requestFocus();
-        }
     }
 
     private void setUpActions() {
@@ -65,27 +53,33 @@ public class LoginActivity extends Activity {
         });
     }
 
-    // validate input
+    //2.input
+    private String readEmailAddress() {
+        return emailInput.getText().toString().trim();
+    }
+
+    private String readPassword() {
+        return passwordInput.getText().toString();
+    }
+
+    //3.process: validate and sign in
     private void validateInputAndOpenProductMenu() {
         String emailAddress = readEmailAddress();
         String password = readPassword();
 
-        if (TextUtils.isEmpty(emailAddress)) {
-            displayInputError(emailInput, "Enter your email address");
+        String errorMessage = validateLogin(emailAddress, password);
+        if (errorMessage != null) {
+            EditText field = emailAddress.isEmpty() ? emailInput : passwordInput;
+            displayInputError(field, errorMessage);
             return;
         }
 
-        if (TextUtils.isEmpty(password)) {
-            displayInputError(passwordInput, "Enter your password");
-            return;
-        }
-
-        boolean userValid = databasePMT.checkUser(
+        int userId = databasePMT.getUserId(
                 emailAddress,
                 password
         );
 
-        if (!userValid) {
+        if (userId == -1) {
             Toast.makeText(
                     this,
                     "Invalid email or password",
@@ -94,25 +88,32 @@ public class LoginActivity extends Activity {
             return;
         }
 
+        UserSession.signIn(userId);
         openProductMenu();
     }
 
-    // read
-    private String readEmailAddress() {
-        return emailInput.getText().toString().trim();
+    static String validateLogin(String email, String password) {
+        if (email.isEmpty()) return "Enter your email address";
+        if (password.isEmpty()) return "Enter your password";
+        return null;
     }
 
-    // read
-    private String readPassword() {
-        return passwordInput.getText().toString();
+    //4.output
+    private void displayPreviewEmail() {
+        String previewEmailAddress = getIntent().getStringExtra(EXTRA_PREVIEW_EMAIL);
+
+        if (previewEmailAddress != null) {
+            emailInput.setText(previewEmailAddress);
+            passwordInput.requestFocus();
+        }
     }
 
-    // display output
     private void displayInputError(EditText inputField, String errorMessage) {
         inputField.setError(errorMessage);
         inputField.requestFocus();
     }
 
+    //5.navigation
     private void openSignUpScreen() {
         Intent signUpIntent = new Intent(this, SignUpActivity.class);
         startActivity(signUpIntent);

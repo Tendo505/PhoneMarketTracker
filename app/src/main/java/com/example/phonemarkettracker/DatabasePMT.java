@@ -8,11 +8,20 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 import java.util.Locale;
 
-// Manages the local SQLite PhoneMarketTracker db.
+//owns v1 account and phone setup; sales integration remains separate.
 public class DatabasePMT extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "phonemarkettracker.db";
     private static final int DATABASE_VERSION = 4;
+
+    private static final String[][] DEFAULT_PHONE_DETAILS = {
+            {"Apple", "iPhone 13 128GB", "1800.00", "2199.00", "8"},
+            {"Apple", "iPhone 15 128GB", "2850.00", "3299.00", "5"},
+            {"Samsung", "Galaxy S24 256GB", "2600.00", "3099.00", "6"},
+            {"Xiaomi", "Redmi Note 13", "650.00", "799.00", "10"},
+            {"OPPO", "Reno 11F 5G", "1050.00", "1299.00", "7"},
+            {"OPPO", "Reno 12", "1500.00", "1899.00", "8"}
+    };
 
     private static final String TABLE_USERS = "users";
     private static final String COLUMN_USER_ID = "user_id";
@@ -28,12 +37,11 @@ public class DatabasePMT extends SQLiteOpenHelper {
     private static final String COLUMN_SELLING_PRICE = "selling_price";
     private static final String COLUMN_STOCK_QUANTITY = "stock_quantity";
 
-    // create
+    //1.database setup and upgrades
     public DatabasePMT(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
-    // create
     @Override
     public void onCreate(SQLiteDatabase database) {
         createUsersTable(database);
@@ -41,7 +49,25 @@ public class DatabasePMT extends SQLiteOpenHelper {
         insertCurrentPhoneDetails(database);
     }
 
-    // create
+    @Override
+    public void onUpgrade(
+            SQLiteDatabase database,
+            int oldVersion,
+            int newVersion
+    ) {
+        if (oldVersion < 3) {
+            createPhonesTable(database);
+            insertCurrentPhoneDetails(database);
+        }
+
+        if (oldVersion < 4) {
+            database.execSQL("DROP TABLE IF EXISTS users_backup");
+            database.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS);
+            createUsersTable(database);
+        }
+    }
+
+    //2.create tables and starting phones
     private void createUsersTable(SQLiteDatabase database) {
         String createUsersTable =
                 "CREATE TABLE " + TABLE_USERS + " (" +
@@ -54,26 +80,6 @@ public class DatabasePMT extends SQLiteOpenHelper {
         database.execSQL(createUsersTable);
     }
 
-    // update
-    @Override
-    public void onUpgrade(
-            SQLiteDatabase database,
-            int oldVersion,
-            int newVersion
-    ) {
-        if (oldVersion < 4) {
-            database.execSQL("DROP TABLE IF EXISTS users_backup");
-            database.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS);
-            createUsersTable(database);
-        }
-
-        if (oldVersion < 3) {
-            createPhonesTable(database);
-            insertCurrentPhoneDetails(database);
-        }
-    }
-
-    // create
     private void createPhonesTable(SQLiteDatabase database) {
         String createPhonesTable =
                 "CREATE TABLE IF NOT EXISTS " + TABLE_PHONES + " (" +
@@ -88,17 +94,19 @@ public class DatabasePMT extends SQLiteOpenHelper {
         database.execSQL(createPhonesTable);
     }
 
-    // create
     private void insertCurrentPhoneDetails(SQLiteDatabase database) {
-        addPhoneIfMissing(database, "Apple", "iPhone 13 128GB", 1800.00, 2199.00, 8);
-        addPhoneIfMissing(database, "Apple", "iPhone 15 128GB", 2850.00, 3299.00, 5);
-        addPhoneIfMissing(database, "Samsung", "Galaxy S24 256GB", 2600.00, 3099.00, 6);
-        addPhoneIfMissing(database, "Xiaomi", "Redmi Note 13", 650.00, 799.00, 10);
-        addPhoneIfMissing(database, "OPPO", "Reno 11F 5G", 1050.00, 1299.00, 7);
-        addPhoneIfMissing(database, "OPPO", "OPPO Reno 12", 1500.00, 1899.00, 8);
+        for (String[] phoneDetails : DEFAULT_PHONE_DETAILS) {
+            addPhoneIfMissing(
+                    database,
+                    phoneDetails[0],
+                    phoneDetails[1],
+                    Double.parseDouble(phoneDetails[2]),
+                    Double.parseDouble(phoneDetails[3]),
+                    Integer.parseInt(phoneDetails[4])
+            );
+        }
     }
 
-    // create
     private void addPhoneIfMissing(
             SQLiteDatabase database,
             String brand,
@@ -132,7 +140,7 @@ public class DatabasePMT extends SQLiteOpenHelper {
         database.insert(TABLE_PHONES, null, phoneDetails);
     }
 
-    // create
+    //3.accounts: register and verify
     public boolean addUser(
             String fullName,
             String emailAddress,
@@ -145,19 +153,12 @@ public class DatabasePMT extends SQLiteOpenHelper {
         userDetails.put(COLUMN_EMAIL, normalizeEmail(emailAddress));
         userDetails.put(COLUMN_PASSWORD, password);
 
-        long newUserId = database.insert(
-                TABLE_USERS,
-                null,
-                userDetails
-        );
-
+        long newUserId = database.insert(TABLE_USERS, null, userDetails);
         return newUserId != -1;
     }
 
-    // read
     public boolean emailExists(String emailAddress) {
         SQLiteDatabase database = getReadableDatabase();
-
         Cursor cursor = database.rawQuery(
                 "SELECT " + COLUMN_USER_ID +
                         " FROM " + TABLE_USERS +
@@ -167,17 +168,11 @@ public class DatabasePMT extends SQLiteOpenHelper {
 
         boolean emailFound = cursor.moveToFirst();
         cursor.close();
-
         return emailFound;
     }
 
-    // validate input
-    public boolean checkUser(
-            String emailAddress,
-            String password
-    ) {
+    public int getUserId(String emailAddress, String password) {
         SQLiteDatabase database = getReadableDatabase();
-
         Cursor cursor = database.rawQuery(
                 "SELECT " + COLUMN_USER_ID +
                         " FROM " + TABLE_USERS +
@@ -186,13 +181,21 @@ public class DatabasePMT extends SQLiteOpenHelper {
                 new String[]{normalizeEmail(emailAddress), password}
         );
 
-        boolean userFound = cursor.moveToFirst();
-        cursor.close();
+        int userId = -1;
 
-        return userFound;
+        if (cursor.moveToFirst()) {
+            userId = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_USER_ID));
+        }
+
+        cursor.close();
+        return userId;
     }
 
-    // validate input
+    //keep the v1 login api available for existing callers.
+    public boolean checkUser(String emailAddress, String password) {
+        return getUserId(emailAddress, password) != -1;
+    }
+
     private String normalizeEmail(String emailAddress) {
         return emailAddress.trim().toLowerCase(Locale.ROOT);
     }
