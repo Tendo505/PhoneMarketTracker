@@ -1,7 +1,5 @@
 package com.example.phonemarkettracker;
 
-import com.example.phonemarkettracker.AppProcesses.PhoneSalesRecord;
-
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;

@@ -67,10 +67,10 @@ public class LoginActivity extends Activity {
         String emailAddress = readEmailAddress();
         String password = readPassword();
 
-        AppProcesses.Error error = AppProcesses.validateLogin(emailAddress, password);
-        if (error != null) {
-            EditText field = error.field == AppProcesses.Field.EMAIL ? emailInput : passwordInput;
-            displayInputError(field, error.message);
+        String errorMessage = validateLogin(emailAddress, password);
+        if (errorMessage != null) {
+            EditText field = emailAddress.isEmpty() ? emailInput : passwordInput;
+            displayInputError(field, errorMessage);
             return;
         }
 
@@ -88,8 +88,14 @@ public class LoginActivity extends Activity {
             return;
         }
 
-        AppProcesses.signIn(userId);
+        UserSession.signIn(userId);
         openProductMenu();
+    }
+
+    static String validateLogin(String email, String password) {
+        if (email.isEmpty()) return "Enter your email address";
+        if (password.isEmpty()) return "Enter your password";
+        return null;
     }
 
     //4.output

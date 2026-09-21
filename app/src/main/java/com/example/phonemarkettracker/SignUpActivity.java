@@ -3,6 +3,7 @@ package com.example.phonemarkettracker;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Patterns;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
@@ -80,10 +81,20 @@ public class SignUpActivity extends Activity {
         String password = readPassword();
         String confirmedPassword = readConfirmedPassword();
 
-        AppProcesses.Error error = AppProcesses.validateRegistration(
-                fullName, emailAddress, password, confirmedPassword);
-        if (error != null) {
-            displayInputError(findInputField(error.field), error.message);
+        if (fullName.isEmpty()) {
+            displayInputError(fullNameInput, "Enter your full name");
+            return;
+        }
+        if (!Patterns.EMAIL_ADDRESS.matcher(emailAddress).matches()) {
+            displayInputError(emailInput, "Enter a valid email address");
+            return;
+        }
+        if (password.length() < 6) {
+            displayInputError(passwordInput, "Use at least 6 characters");
+            return;
+        }
+        if (!password.equals(confirmedPassword)) {
+            displayInputError(confirmPasswordInput, "Passwords do not match");
             return;
         }
 
@@ -117,16 +128,6 @@ public class SignUpActivity extends Activity {
     }
 
     //4.output
-    private EditText findInputField(AppProcesses.Field field) {
-        switch (field) {
-            case NAME: return fullNameInput;
-            case EMAIL: return emailInput;
-            case PASSWORD: return passwordInput;
-            case CONFIRM_PASSWORD: return confirmPasswordInput;
-            default: throw new IllegalArgumentException("Unknown input field");
-        }
-    }
-
     private void displayInputError(EditText inputField, String errorMessage) {
         inputField.setError(errorMessage);
         inputField.requestFocus();

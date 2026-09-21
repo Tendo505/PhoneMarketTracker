@@ -14,11 +14,12 @@ import android.widget.Toast;
 
 import java.util.List;
 import java.util.Locale;
+import java.time.LocalDate;
 
-//displays cart input and results from the process classes.
+//cart input, checkout process and displayed results.
 public class CartActivity extends Activity {
 
-    private AppProcesses appProcesses;
+    private DatabasePMT databasePMT;
     private LinearLayout cartItemContainer;
     private LinearLayout cartSummaryCard;
     private TextView emptyCartText;
@@ -34,7 +35,7 @@ public class CartActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_cart);
 
-        appProcesses = new AppProcesses(new DatabasePMT(this));
+        databasePMT = new DatabasePMT(this);
         connectViews();
         setUpActions();
     }
@@ -65,7 +66,7 @@ public class CartActivity extends Activity {
 
     //2.read cart and display totals
     private void displayCart() {
-        List<CartItem> cartItems = AppProcesses.getItems();
+        List<CartItem> cartItems = CartManager.getItems();
         boolean cartEmpty = cartItems.isEmpty();
 
         cartItemContainer.removeAllViews();
@@ -75,8 +76,8 @@ public class CartActivity extends Activity {
 
         String countMessage = getResources().getQuantityString(
                 R.plurals.cart_item_count,
-                AppProcesses.getTotalQuantity(),
-                AppProcesses.getTotalQuantity()
+                CartManager.getTotalQuantity(),
+                CartManager.getTotalQuantity()
         );
         cartCountText.setText(countMessage);
 
@@ -102,7 +103,7 @@ public class CartActivity extends Activity {
 
     //3.process: confirm, save or clear
     private void confirmSale() {
-        List<CartItem> cartItems = AppProcesses.getItems();
+        List<CartItem> cartItems = CartManager.getItems();
 
         if (cartItems.isEmpty()) {
             return;
@@ -122,10 +123,18 @@ public class CartActivity extends Activity {
     }
 
     private void saveSale(List<CartItem> cartItems) {
-        boolean saleCompleted = appProcesses.completeSale(
-                AppProcesses.getUserId(),
-                cartItems
-        );
+        int userId = UserSession.getUserId();
+        boolean saleCompleted = false;
+
+        if (userId > 0 && cartItems != null && !cartItems.isEmpty()) {
+            SalesCalculator.Totals totals = new SalesCalculator.Totals(
+                    SalesCalculator.calculateTotalCost(cartItems),
+                    SalesCalculator.calculateTotalRevenue(cartItems),
+                    SalesCalculator.calculateProfitLoss(cartItems)
+            );
+            saleCompleted = databasePMT.saveSale(
+                    userId, cartItems, LocalDate.now().toString(), totals);
+        }
 
         if (!saleCompleted) {
             Toast.makeText(
@@ -136,12 +145,14 @@ public class CartActivity extends Activity {
             return;
         }
 
+        //clear only after saving succeeds.
+        CartManager.clearCart();
         displayCart();
         Toast.makeText(this, "Sale completed and saved", Toast.LENGTH_SHORT).show();
     }
 
     private void clearCart() {
-        AppProcesses.clearCart();
+        CartManager.clearCart();
         displayCart();
     }
 
@@ -219,11 +230,11 @@ public class CartActivity extends Activity {
         lineTotal.setLayoutParams(totalLayout);
 
         decreaseButton.setOnClickListener(view -> {
-            AppProcesses.decreaseQuantity(cartItem.getPhone().getPhoneId());
+            CartManager.decreaseQuantity(cartItem.getPhone().getPhoneId());
             displayCart();
         });
         increaseButton.setOnClickListener(view -> {
-            boolean quantityIncreased = AppProcesses.increaseQuantity(
+            boolean quantityIncreased = CartManager.increaseQuantity(
                     cartItem.getPhone().getPhoneId()
             );
 

@@ -1,8 +1,5 @@
 package com.example.phonemarkettracker;
 
-import com.example.phonemarkettracker.AppProcesses.DailySalesSummary;
-import com.example.phonemarkettracker.AppProcesses.PhoneSalesRecord;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
@@ -21,6 +18,7 @@ import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.time.LocalDate;
 
 
 import java.util.Locale;
@@ -30,7 +28,7 @@ public class ChartActivity extends Activity {
     private static final float BAR_WIDTH = 0.58f;
     private static final int CHART_ANIMATION_DURATION = 700;
 
-    private AppProcesses appProcesses;
+    private DatabasePMT databasePMT;
     private BarChart phoneSalesChart;
     private TextView totalSoldText;
     private TextView profitLossText;
@@ -43,7 +41,7 @@ public class ChartActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chart);
 
-        appProcesses = new AppProcesses(new DatabasePMT(this));
+        databasePMT = new DatabasePMT(this);
         connectViews();
         setUpActions();
     }
@@ -70,8 +68,10 @@ public class ChartActivity extends Activity {
 
     //2.read daily results and display chart
     private void displayDailySales() {
-        DailySalesSummary dailySalesSummary = appProcesses.getTodaySalesSummary();
-        List<PhoneSalesRecord> phoneSalesRecords = appProcesses.getTodayPhoneSales();
+        String date = LocalDate.now().toString();
+        SalesCalculator.Totals totals = databasePMT.getSalesTotals(date);
+        List<PhoneSalesRecord> phoneSalesRecords = databasePMT.getPhoneSales(date);
+        DailySalesSummary dailySalesSummary = summarizeDailySales(totals, phoneSalesRecords);
 
         totalSoldText.setText(
                 getResources().getQuantityString(
@@ -92,6 +92,25 @@ public class ChartActivity extends Activity {
         displayPhoneSalesChart(phoneSalesRecords);
     }
 
+    static DailySalesSummary summarizeDailySales(SalesCalculator.Totals totals,
+                                                List<PhoneSalesRecord> phoneSalesRecords) {
+        int totalQuantitySold = 0;
+        String mostSoldPhone = "No sales yet";
+        int mostSoldQuantity = 0;
+
+        for (PhoneSalesRecord record : phoneSalesRecords) {
+            //jumlah unit terjual.
+            totalQuantitySold += record.getQuantitySold();
+            //seri kekalkan yang pertama.
+            if (record.getQuantitySold() > mostSoldQuantity) {
+                mostSoldQuantity = record.getQuantitySold();
+                mostSoldPhone = record.getPhoneName();
+            }
+        }
+        return new DailySalesSummary(totalQuantitySold, totals.getTotalCost(),
+                totals.getTotalRevenue(), totals.getProfitLoss(), mostSoldPhone, mostSoldQuantity);
+    }
+
     //3.process: confirm and reset today
     private void confirmDailyReset() {
         new AlertDialog.Builder(this)
@@ -106,7 +125,8 @@ public class ChartActivity extends Activity {
     }
 
     private void resetDailyTracking() {
-        appProcesses.closeDay();
+        databasePMT.deleteSales(LocalDate.now().toString());
+        CartManager.clearCart();
         displayDailySales();
         Toast.makeText(this, "Today's tracking has been reset", Toast.LENGTH_SHORT).show();
     }
@@ -117,8 +137,7 @@ public class ChartActivity extends Activity {
         return sign + String.format(Locale.US, "RM %,.2f", Math.abs(amount));
     }
 
-    //5.chart styling only
-    //5.chart bars and labels
+    //5.chart bars and labels (style)
     private void displayPhoneSalesChart(List<PhoneSalesRecord> phoneSalesRecords) {
         List<BarEntry> phoneSalesEntries = new ArrayList<>();
         List<String> phoneLabels = new ArrayList<>();
@@ -182,11 +201,11 @@ public class ChartActivity extends Activity {
     //chart appearance
     private void stylePhoneSalesDataSet(BarDataSet phoneSalesDataSet) {
         phoneSalesDataSet.setColors(
-                Color.parseColor("#3F51B5"),
-                Color.parseColor("#00A8B8"),
-                Color.parseColor("#7C4DFF"),
-                Color.parseColor("#FF9800"),
-                Color.parseColor("#16A34A")
+                Color.parseColor("#3F51B5"), //deepblueindigo
+                Color.parseColor("#00A8B8"), //cyan
+                Color.parseColor("#7C4DFF"), //purple
+                Color.parseColor("#FF9800"),  //bright orange
+                Color.parseColor("#16A34A")    //green
         );
         phoneSalesDataSet.setValueTextColor(Color.parseColor("#172033"));
         phoneSalesDataSet.setValueTextSize(11f);

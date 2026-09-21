@@ -31,7 +31,8 @@ app/src/
 │   │   ├── ProductActivity.java / CartActivity.java / ChartActivity.java
 │   │   ├── Phone.java / CartItem.java
 │   │   ├── SalesCalculator.java
-│   │   ├── AppProcesses.java
+│   │   ├── CartManager.java / UserSession.java
+│   │   ├── DailySalesSummary.java / PhoneSalesRecord.java
 │   │   └── DatabasePMT.java
 │   └── res/
 │       ├── layout/       # Android screen XML
@@ -130,14 +131,14 @@ but does not delete products or restore stock.
 | Cart cost | Sum of item costs | `SalesCalculator.calculateTotalCost()` |
 | Cart revenue | Sum of item revenues | `SalesCalculator.calculateTotalRevenue()` |
 | Cart gross profit/loss | Cart revenue − cart cost | `SalesCalculator.calculateProfitLoss()` |
-| Cart units | Sum of selected quantities | `AppProcesses.getTotalQuantity()` |
+| Cart units | Sum of selected quantities | `CartManager.getTotalQuantity()` |
 | Remaining stock | Current stock − completed-sale quantity | `DatabasePMT.reducePhoneStock()` |
 | Daily financial totals | Sum stored financial totals for a date | `DatabasePMT.getSalesTotals()` |
 | Units sold per product | Sum sale-item quantities per phone for a date | `DatabasePMT.getPhoneSales()` |
-| Daily units and top product | Sum quantities and select the highest quantity | `AppProcesses.summarize()` |
+| Daily units and top product | Sum quantities and select the highest quantity | `ChartActivity.summarizeDailySales()` |
 | Chart bars | Quantity sold determines bar height; zero-sales products are skipped | `ChartActivity.displayPhoneSalesChart()` |
 
-`AppProcesses.completeSale()` validates checkout input and calculates totals.
+`CartActivity.saveSale()` validates checkout input and calculates totals.
 `DatabasePMT.saveSale()` validates current stock, stores the sale and its
 items, and deducts stock inside one database transaction. A failure rolls back
 the transaction. Adding to the cart does not deduct persistent stock.
@@ -181,9 +182,8 @@ screen navigation or daily reset have been tested on a device.
 
 ### Manual demo checklist
 
-Verification on 17 September 2026: the debug APK built, all 10 local unit tests
-passed, and lint completed with warnings and no errors using Android Studio's
-bundled JDK. Layout resources and Java-built card/chart styling were preserved.
+Verification on 21 September 2026: the debug APK built and all 10 local unit tests
+passed using Android Studio's bundled JDK. Layout resources and Java-built card/chart styling were preserved.
 No device demo was performed during this refactor; use the checklist below for
 runtime verification of authentication, persistence, checkout and screen appearance.
 
@@ -198,12 +198,13 @@ runtime verification of authentication, persistence, checkout and screen appeara
 
 ## Code review notes
 
-V2 has 10 main Java files. Cart/session operations are in AppProcesses; its small
-result types are nested at the bottom. Redundant formula wrappers were removed.
+V2 has 13 main Java files. Each Activity controls its screen-specific process.
+CartManager shares the cart; UserSession shares the current user ID. The two daily
+result classes are simple holders. SalesCalculator.Totals remains nested.
 
 See [CODE_FLOW.md](CODE_FLOW.md) for each class's responsibility and the checkout
-and chart call sequences. Activities handle input/output, process classes handle
-rules, and DatabasePMT owns SQL and transactional writes. SQL aggregation and
+and chart call sequences. Activities handle input, screen-specific processing and
+output. DatabasePMT owns SQL and transactional writes. SQL aggregation and
 stock guards intentionally stay in the database class. The refactor preserves
 the existing interface and database schema.
 

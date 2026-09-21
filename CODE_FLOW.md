@@ -1,85 +1,81 @@
 # V2 code reading guide
 
-There are 10 main Java files. Read the screen for input/output, AppProcesses for
-the workflow, SalesCalculator for formulas, and DatabasePMT for storage.
+There are 13 main Java files. Each Activity owns its screen's input, processing
+flow and output. Shared helpers contain only shared responsibilities.
 
-## Files
+## Class structure
 
-| File | Responsibility |
+| Class | Responsibility |
 | --- | --- |
-| LoginActivity | Sign-in fields, error display and navigation |
-| SignUpActivity | Registration fields, error display and navigation |
-| ProductActivity | Phone cards and selection buttons |
-| CartActivity | Cart display, quantity buttons and checkout confirmation |
-| ChartActivity | Daily results and chart drawing |
-| AppProcesses | Account validation, cart operations, session, checkout and daily tracking |
-| SalesCalculator | Item/cart cost, revenue and gross profit/loss formulas |
-| DatabasePMT | Tables, queries and transactional writes |
-| Phone | One phone's details |
-| CartItem | Selected phone and stock-bounded quantity |
+| LoginActivity | Read and validate login input, query accounts, sign in and display errors |
+| SignUpActivity | Validate registration, check duplicates and create accounts |
+| ProductActivity | Read phones, create cards, handle ADD and display its result |
+| CartActivity | Read/display the cart, handle quantities, calculate totals and save checkout |
+| ChartActivity | Read today's sales, summarize units/top model, display chart and reset |
+| CartManager | Shared cart, item lookup and stock-bounded quantity changes |
+| UserSession | Current signed-in user ID |
+| SalesCalculator | Six money formulas and nested Totals holder |
+| DatabasePMT | Schema, queries, stock validation and transactional writes |
+| Phone / CartItem | Phone details and selected quantity |
+| DailySalesSummary / PhoneSalesRecord | Plain reporting data holders |
 
-Small daily result types live at the bottom of AppProcesses, not in separate
-files. SalesCalculator.Totals holds financial results inside SalesCalculator.
-These named values keep the code readable without using numbered array positions.
+## Responsibility mapping
 
-## Find the process
+| Previous responsibility | Current method or class |
+| --- | --- |
+| Login validation | LoginActivity.validateLogin |
+| Registration validation | SignUpActivity.validateInputAndReturnToSignIn |
+| Cart operations and unit count | CartManager |
+| Signed-in user | UserSession |
+| Checkout validation, totals and save | CartActivity.saveSale |
+| Today's database reads | ChartActivity.displayDailySales |
+| Quantity sum and most-sold model | ChartActivity.summarizeDailySales |
+| Close Day and cart reset | ChartActivity.resetDailyTracking |
+| Nested reporting holders | DailySalesSummary and PhoneSalesRecord |
 
-Open AppProcesses and follow the short section comments:
+## Product selection
 
-1. sign-in rules: validateLogin
-2. registration rules: validateRegistration
-3. cart selections and quantity: getItems, getTotalQuantity, addPhone, increaseQuantity, decreaseQuantity, clearCart, findItem
-4. signed-in user: signIn, getUserId, signOut
-5. checkout: completeSale
-6. daily results: getTodaySalesSummary, getTodayPhoneSales, summarize
-7. close day: closeDay
-8. daily result data: DailySalesSummary and PhoneSalesRecord
-
-CartItem keeps its quantity limits; it contains no financial formulas.
-Account database reads/writes remain direct calls from the account screens;
-input rules are in AppProcesses.
+displayAvailablePhones reads List<Phone> from DatabasePMT. A loop creates one
+card per phone. Each ADD listener passes its Phone to addPhoneToCart.
+CartManager.addPhone merges by phone ID and checks stock. Six records produce
+six cards, not six hardcoded selection branches. ADD changes only the cart.
 
 ## Checkout
 
-CartActivity.confirmSale → saveSale → AppProcesses.completeSale →
-SalesCalculator → DatabasePMT.saveSale → refresh CartActivity.
-
-The process validates input and calculates totals. The database checks live stock
-and writes the sale, its items and stock changes inside one transaction.
-The cart clears only after success. A failed write rolls back the transaction.
+CartActivity.confirmSale calls saveSale after confirmation. saveSale checks
+UserSession and the cart, obtains SalesCalculator totals and calls
+DatabasePMT.saveSale. The database checks live stock and writes the sale,
+items and stock changes in one transaction. Only success clears the cart.
+Failure rolls back the transaction and keeps the cart.
 
 ## Phones to chart
 
-ChartActivity connects the XML view with findViewById(R.id.phoneSalesChart).
-AppProcesses requests today's quantities from DatabasePMT.getPhoneSales.
-The database joins phones, sales and sale_items and groups quantities by phone ID.
+ChartActivity.displayDailySales gets the local date and calls
+DatabasePMT.getSalesTotals and getPhoneSales, then summarizeDailySales.
+SQLite joins phones, sales and sale_items and groups quantities by phone ID.
+The summary loop sums units and selects the highest, keeping the first on a tie.
 
-ChartActivity.displayPhoneSalesChart loops through those records:
-each sold phone gets a BarEntry with x = index and y = sold quantity.
-The phone label uses the same index. IndexAxisValueFormatter links those labels,
-then setData and invalidate display the bars. Unsold phones are skipped.
-Colours only affect appearance; they do not read or identify sales data.
+findViewById(R.id.phoneSalesChart) links Java to activity_chart.xml.
+displayPhoneSalesChart creates BarEntry values: x is the index and y is quantity.
+The label at the same index identifies the model. IndexAxisValueFormatter sets
+labels; setData and invalidate display the bars. Unsold phones are skipped.
+Colours affect appearance only.
 
 ## Formulas
 
-- SalesCalculator.calculateItemCost: unit cost × quantity.
-- SalesCalculator.calculateItemRevenue: unit selling price × quantity.
-- SalesCalculator.calculateItemProfitLoss: item revenue − item cost.
-- SalesCalculator.calculateTotalCost / calculateTotalRevenue: loop and sum item totals.
-- SalesCalculator.calculateProfitLoss: cart revenue − cart cost.
-- AppProcesses.getTotalQuantity: loop and count cart units.
-- AppProcesses.summarize: count sold units and choose the highest quantity.
-- DatabasePMT.getSalesTotals / getPhoneSales: SQL SUM for the requested date.
-- DatabasePMT.reducePhoneStock: subtract sold quantity only when sufficient stock remains.
+- SalesCalculator: item cost, item revenue, item profit/loss, cart cost, cart revenue and cart profit/loss.
+- CartManager.getTotalQuantity: sum selected quantities.
+- ChartActivity.summarizeDailySales: sum sold units and choose the highest.
+- DatabasePMT.getSalesTotals / getPhoneSales: SQL SUM for the supplied date.
+- DatabasePMT.reducePhoneStock: subtract quantity only when sufficient stock remains.
 
-SQL sums and stock guards belong to the database operations. Screen code contains
-display formatting, not financial formulas. A quantity tie keeps the first phone
-in the database query's ordering.
+## Preserved behaviour and verification
 
-## Preserved behaviour
+XML, IDs, schema, initial phone data and money formulas are unchanged.
+Close Day deletes today's sales and clears the cart without restoring stock.
+Sign-out clears cart and session. App closure retains completed SQLite records.
+Existing chart colour comments and local login-layout edits are preserved.
 
-The screen layouts, Java-built cards, chart styling and messages are unchanged.
-The database name, schema version and stored data are unchanged.
-Close Day deletes today's sales and clears the cart, but does not restore stock.
-Sign-out clears the cart and signed-in user. Closing the app loses only in-memory
-session/cart state, not completed sales. V1 was not changed.
+21 September 2026: debug build and all 10 unit tests passed after this refactor.
+The removed general process class has no remaining references in app/src.
+Full device regression remains a manual check; see the README demo checklist.

@@ -1,7 +1,5 @@
 package com.example.phonemarkettracker;
 
-import com.example.phonemarkettracker.AppProcesses.DailySalesSummary;
-import com.example.phonemarkettracker.AppProcesses.PhoneSalesRecord;
 
 import org.junit.After;
 import org.junit.Test;
@@ -14,7 +12,7 @@ public class ProcessTest {
 
     @After
     public void clearCart() {
-        AppProcesses.clearCart();
+        CartManager.clearCart();
     }
 
     @Test
@@ -35,7 +33,7 @@ public class ProcessTest {
 
     @Test
     public void emptyDayKeepsNoSalesMessage() {
-        DailySalesSummary summary = AppProcesses.summarize(
+        DailySalesSummary summary = ChartActivity.summarizeDailySales(
                 new SalesCalculator.Totals(0, 0, 0), Collections.emptyList());
         assertEquals(0, summary.getTotalQuantitySold());
         assertEquals(0, summary.getMostSoldQuantity());
@@ -44,7 +42,7 @@ public class ProcessTest {
 
     @Test
     public void zeroSalesPhonesDoNotBecomeTopPhone() {
-        DailySalesSummary summary = AppProcesses.summarize(
+        DailySalesSummary summary = ChartActivity.summarizeDailySales(
                 new SalesCalculator.Totals(0, 0, 0),
                 Arrays.asList(new PhoneSalesRecord("A", 0), new PhoneSalesRecord("B", 0)));
         assertEquals("No sales yet", summary.getMostSoldPhone());
@@ -53,7 +51,7 @@ public class ProcessTest {
 
     @Test
     public void dailyTotalsAndTieOrderArePreserved() {
-        DailySalesSummary summary = AppProcesses.summarize(
+        DailySalesSummary summary = ChartActivity.summarizeDailySales(
                 new SalesCalculator.Totals(100, 90, -10),
                 Arrays.asList(new PhoneSalesRecord("A", 3),
                         new PhoneSalesRecord("B", 3), new PhoneSalesRecord("C", 1)));
@@ -67,7 +65,7 @@ public class ProcessTest {
 
     @Test
     public void largestQuantityWinsEvenWhenNotFirst() {
-        DailySalesSummary summary = AppProcesses.summarize(
+        DailySalesSummary summary = ChartActivity.summarizeDailySales(
                 new SalesCalculator.Totals(0, 0, 0),
                 Arrays.asList(new PhoneSalesRecord("A", 1), new PhoneSalesRecord("B", 6)));
         assertEquals("B", summary.getMostSoldPhone());
@@ -76,26 +74,23 @@ public class ProcessTest {
 
     @Test
     public void repeatedSelectionKeepsOneCartItemAndCountsUnits() {
-        AppProcesses.clearCart();
+        CartManager.clearCart();
         Phone phone = new Phone(1, "Test", "Phone", 100, 120, 2);
-        assertTrue(AppProcesses.addPhone(phone));
-        assertTrue(AppProcesses.addPhone(phone));
-        assertFalse(AppProcesses.addPhone(phone));
-        assertEquals(1, AppProcesses.getItems().size());
-        assertEquals(2, AppProcesses.getTotalQuantity());
-        AppProcesses.decreaseQuantity(1);
-        assertEquals(1, AppProcesses.getTotalQuantity());
-        AppProcesses.decreaseQuantity(1);
-        assertTrue(AppProcesses.getItems().isEmpty());
+        assertTrue(CartManager.addPhone(phone));
+        assertTrue(CartManager.addPhone(phone));
+        assertFalse(CartManager.addPhone(phone));
+        assertEquals(1, CartManager.getItems().size());
+        assertEquals(2, CartManager.getTotalQuantity());
+        CartManager.decreaseQuantity(1);
+        assertEquals(1, CartManager.getTotalQuantity());
+        CartManager.decreaseQuantity(1);
+        assertTrue(CartManager.getItems().isEmpty());
     }
 
     @Test
     public void loginValidationKeepsOriginalErrorOrder() {
-        AppProcesses.Error error = AppProcesses.validateLogin("", "");
-        assertEquals(AppProcesses.Field.EMAIL, error.field);
-        assertEquals("Enter your email address", error.message);
-        assertEquals(AppProcesses.Field.PASSWORD,
-                AppProcesses.validateLogin("a@b.com", "").field);
-        assertNull(AppProcesses.validateLogin("a@b.com", "password"));
+        assertEquals("Enter your email address", LoginActivity.validateLogin("", ""));
+        assertEquals("Enter your password", LoginActivity.validateLogin("a@b.com", ""));
+        assertNull(LoginActivity.validateLogin("a@b.com", "password"));
     }
 }
