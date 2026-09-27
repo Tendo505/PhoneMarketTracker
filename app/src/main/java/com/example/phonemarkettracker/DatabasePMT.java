@@ -59,7 +59,6 @@ public class DatabasePMT extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase database) {
         createUsersTable(database);
         createPhonesTable(database);
-        insertCurrentPhoneDetails(database);
         createSalesTables(database);
     }
 
@@ -71,7 +70,6 @@ public class DatabasePMT extends SQLiteOpenHelper {
     ) {
         if (oldVersion < 3) {
             createPhonesTable(database);
-            insertCurrentPhoneDetails(database);
         }
 
         if (oldVersion < 4) {
@@ -85,7 +83,7 @@ public class DatabasePMT extends SQLiteOpenHelper {
         }
     }
 
-    //2.create tables and starting phones
+    //2.create empty tables
     private void createUsersTable(SQLiteDatabase database) {
         String createUsersTable =
                 "CREATE TABLE " + TABLE_USERS + " (" +
@@ -141,49 +139,6 @@ public class DatabasePMT extends SQLiteOpenHelper {
 
         database.execSQL(createSalesTable);
         database.execSQL(createSaleItemsTable);
-    }
-
-    private void insertCurrentPhoneDetails(SQLiteDatabase database) {
-        //initial records; screens read phones from sqlite.
-        insertInitialPhone(database, "Apple", "iPhone 13 128GB", 1800.00, 2199.00, 8);
-        insertInitialPhone(database, "Apple", "iPhone 15 128GB", 2850.00, 3299.00, 5);
-        insertInitialPhone(database, "Samsung", "Galaxy S24 256GB", 2600.00, 3099.00, 6);
-        insertInitialPhone(database, "Xiaomi", "Redmi Note 13", 650.00, 799.00, 10);
-        insertInitialPhone(database, "OPPO", "Reno 11F 5G", 1050.00, 1299.00, 7);
-        insertInitialPhone(database, "OPPO", "Reno 12", 1500.00, 1899.00, 8);
-    }
-
-    private void insertInitialPhone(
-            SQLiteDatabase database,
-            String brand,
-            String model,
-            double costPrice,
-            double sellingPrice,
-            int stockQuantity
-    ) {
-        Cursor cursor = database.rawQuery(
-                "SELECT " + COLUMN_PHONE_ID +
-                        " FROM " + TABLE_PHONES +
-                        " WHERE " + COLUMN_BRAND + " = ?" +
-                        " AND " + COLUMN_MODEL + " = ?",
-                new String[]{brand, model}
-        );
-
-        boolean phoneExists = cursor.moveToFirst();
-        cursor.close();
-
-        if (phoneExists) {
-            return;
-        }
-
-        ContentValues phoneDetails = new ContentValues();
-        phoneDetails.put(COLUMN_BRAND, brand);
-        phoneDetails.put(COLUMN_MODEL, model);
-        phoneDetails.put(COLUMN_COST_PRICE, costPrice);
-        phoneDetails.put(COLUMN_SELLING_PRICE, sellingPrice);
-        phoneDetails.put(COLUMN_STOCK_QUANTITY, stockQuantity);
-
-        database.insert(TABLE_PHONES, null, phoneDetails);
     }
 
     //3.accounts: register and verify
