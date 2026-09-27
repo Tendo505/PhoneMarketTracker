@@ -14,15 +14,6 @@ public class DatabasePMT extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "phonemarkettracker.db";
     private static final int DATABASE_VERSION = 4;
 
-    private static final String[][] DEFAULT_PHONE_DETAILS = {
-            {"Apple", "iPhone 13 128GB", "1800.00", "2199.00", "8"},
-            {"Apple", "iPhone 15 128GB", "2850.00", "3299.00", "5"},
-            {"Samsung", "Galaxy S24 256GB", "2600.00", "3099.00", "6"},
-            {"Xiaomi", "Redmi Note 13", "650.00", "799.00", "10"},
-            {"OPPO", "Reno 11F 5G", "1050.00", "1299.00", "7"},
-            {"OPPO", "Reno 12", "1500.00", "1899.00", "8"}
-    };
-
     private static final String TABLE_USERS = "users";
     private static final String COLUMN_USER_ID = "user_id";
     private static final String COLUMN_FULL_NAME = "full_name";
@@ -46,7 +37,6 @@ public class DatabasePMT extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase database) {
         createUsersTable(database);
         createPhonesTable(database);
-        insertCurrentPhoneDetails(database);
     }
 
     @Override
@@ -57,7 +47,6 @@ public class DatabasePMT extends SQLiteOpenHelper {
     ) {
         if (oldVersion < 3) {
             createPhonesTable(database);
-            insertCurrentPhoneDetails(database);
         }
 
         if (oldVersion < 4) {
@@ -67,7 +56,7 @@ public class DatabasePMT extends SQLiteOpenHelper {
         }
     }
 
-    //2.create tables and starting phones
+    //2.create empty tables
     private void createUsersTable(SQLiteDatabase database) {
         String createUsersTable =
                 "CREATE TABLE " + TABLE_USERS + " (" +
@@ -92,52 +81,6 @@ public class DatabasePMT extends SQLiteOpenHelper {
                         ")";
 
         database.execSQL(createPhonesTable);
-    }
-
-    private void insertCurrentPhoneDetails(SQLiteDatabase database) {
-        for (String[] phoneDetails : DEFAULT_PHONE_DETAILS) {
-            addPhoneIfMissing(
-                    database,
-                    phoneDetails[0],
-                    phoneDetails[1],
-                    Double.parseDouble(phoneDetails[2]),
-                    Double.parseDouble(phoneDetails[3]),
-                    Integer.parseInt(phoneDetails[4])
-            );
-        }
-    }
-
-    private void addPhoneIfMissing(
-            SQLiteDatabase database,
-            String brand,
-            String model,
-            double costPrice,
-            double sellingPrice,
-            int stockQuantity
-    ) {
-        Cursor cursor = database.rawQuery(
-                "SELECT " + COLUMN_PHONE_ID +
-                        " FROM " + TABLE_PHONES +
-                        " WHERE " + COLUMN_BRAND + " = ?" +
-                        " AND " + COLUMN_MODEL + " = ?",
-                new String[]{brand, model}
-        );
-
-        boolean phoneExists = cursor.moveToFirst();
-        cursor.close();
-
-        if (phoneExists) {
-            return;
-        }
-
-        ContentValues phoneDetails = new ContentValues();
-        phoneDetails.put(COLUMN_BRAND, brand);
-        phoneDetails.put(COLUMN_MODEL, model);
-        phoneDetails.put(COLUMN_COST_PRICE, costPrice);
-        phoneDetails.put(COLUMN_SELLING_PRICE, sellingPrice);
-        phoneDetails.put(COLUMN_STOCK_QUANTITY, stockQuantity);
-
-        database.insert(TABLE_PHONES, null, phoneDetails);
     }
 
     //3.accounts: register and verify
