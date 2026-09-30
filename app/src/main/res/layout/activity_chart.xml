@@ -31,7 +31,6 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Today • Live SQLite data"
                 android:textColor="#DDE3FF"
                 android:textSize="11sp" />
         </LinearLayout>

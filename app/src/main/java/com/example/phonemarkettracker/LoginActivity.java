@@ -97,7 +97,6 @@ public class LoginActivity extends Activity {
         if (password.isEmpty()) return "Enter your password";
         return null;
     }
-
     //4.output
     private void displayPreviewEmail() {
         String previewEmailAddress = getIntent().getStringExtra(EXTRA_PREVIEW_EMAIL);

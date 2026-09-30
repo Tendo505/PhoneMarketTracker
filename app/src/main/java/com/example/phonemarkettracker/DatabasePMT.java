@@ -300,7 +300,7 @@ public class DatabasePMT extends SQLiteOpenHelper {
         database.insertOrThrow(TABLE_SALE_ITEMS, null, itemDetails);
     }
 
-    private void reducePhoneStock(SQLiteDatabase database, CartItem cartItem) {
+    private void reducePhoneStock(SQLiteDatabase database, CartItem cartItem) { //update
         //baki stok = stok semasa - kuantiti terjual.
         SQLiteStatement stockUpdate = database.compileStatement(
                 "UPDATE " + TABLE_PHONES +
@@ -338,6 +338,7 @@ public class DatabasePMT extends SQLiteOpenHelper {
 
         if (totalsCursor.moveToFirst()) {
             totalCost = totalsCursor.getDouble(0);
+
             totalRevenue = totalsCursor.getDouble(1);
             profitLoss = totalsCursor.getDouble(2);
         }
@@ -379,7 +380,7 @@ public class DatabasePMT extends SQLiteOpenHelper {
         return phoneSalesRecords;
     }
 
-    //7.delete sales for a supplied date
+    //7.delete sales for a supplied date (delete)
     public void deleteSales(String saleDate) {
         SQLiteDatabase database = getWritableDatabase();
         database.delete(
