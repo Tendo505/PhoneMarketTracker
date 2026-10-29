@@ -4,6 +4,10 @@ PhoneMarketTracker is a simple Android Studio Koala interface built with pure
 Java and editable XML layouts. This version intentionally contains no database,
 authentication backend, stock updates, checkout logic, or persistent storage.
 
+<p align="center">
+  <img src="docs/screenshot.png" width="280" alt="The PhoneMarketTracker Sign In screen">
+</p>
+
 ## Included screens
 
 - Sign In
