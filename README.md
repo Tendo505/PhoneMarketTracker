@@ -5,7 +5,7 @@ Java and editable XML layouts. This version intentionally contains no database,
 authentication backend, stock updates, checkout logic, or persistent storage.
 
 <p align="center">
-  <img src="docs/screenshot.png" width="280" alt="The PhoneMarketTracker Sign In screen">
+  <img src="docs/montage.png" width="100%" alt="Sign in, sign up, product menu, sales overview, cart">
 </p>
 
 ## Included screens
